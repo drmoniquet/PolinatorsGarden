@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pollinator Garden</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --parchment:    #f5f0e8;
+      --parchment-dk: #ede6d5;
+      --ink:          #2b2318;
+      --ink-mid:      #4a3d2e;
+      --ink-light:    #7a6a55;
+      --rust:         #8b3a1a;
+      --moss:         #4a6741;
+      --border:       rgba(43,35,24,0.18);
+      --serif:        'Playfair Display', Georgia, serif;
+      --type:         'Special Elite', 'Courier New', monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--parchment); color: var(--ink); font-family: var(--type); font-size: 16px; line-height: 1.75; min-height: 100vh; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; }
+    .page { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 0 2rem 6rem; }
+    header { padding: 4rem 0 2.5rem; border-bottom: 1.5px solid var(--border); margin-bottom: 3.5rem; }
+    .header-eyebrow { font-size: 0.78rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.75rem; }
+    header h1 { font-family: var(--serif); font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 700; line-height: 1.15; }
+    header h1 em { font-style: italic; color: var(--moss); }
+    .header-rule { width: 60px; height: 2px; background: var(--rust); margin: 1.5rem 0; }
+    .intro { margin-bottom: 4rem; }
+    .intro h2 { font-family: var(--serif); font-size: 1.35rem; font-weight: 400; font-style: italic; color: var(--ink-mid); margin-bottom: 1.25rem; }
+    .intro p { font-size: 0.96rem; color: var(--ink-mid); margin-bottom: 1rem; max-width: 68ch; }
+    .pull-quote { border-left: 3px solid var(--rust); padding: 0.6rem 0 0.6rem 1.4rem; margin: 2rem 0; font-family: var(--serif); font-style: italic; font-size: 1.05rem; color: var(--ink); line-height: 1.6; }
+    .plant-group { margin-bottom: 3.5rem; }
+    .group-heading { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.25rem; }
+    .group-heading h2 { font-family: var(--serif); font-size: 1.25rem; font-weight: 700; color: var(--ink); }
+    .group-count { font-size: 0.75rem; letter-spacing: 0.12em; color: var(--ink-light); }
+    .group-desc { font-size: 0.82rem; color: var(--ink-light); margin-bottom: 1.25rem; font-style: italic; max-width: 60ch; }
+    .plant-card { border-top: 1px solid var(--border); }
+    .plant-card:last-child { border-bottom: 1px solid var(--border); }
+    .plant-trigger { width: 100%; background: none; border: none; cursor: pointer; padding: 1.1rem 0; display: flex; align-items: center; gap: 1rem; text-align: left; color: var(--ink); font-family: var(--type); }
+    .plant-trigger:hover .plant-common { color: var(--rust); }
+    .plant-icon { flex-shrink: 0; width: 38px; height: 38px; background: var(--parchment-dk); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .plant-icon svg { width: 28px; height: 28px; }
+    .plant-names { flex: 1; }
+    .plant-common { font-family: var(--serif); font-size: 1rem; font-weight: 700; display: block; transition: color 0.2s; }
+    .plant-latin { font-family: var(--serif); font-style: italic; font-size: 0.8rem; color: var(--ink-light); }
+    .plant-tags { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-right: 0.5rem; }
+    @media (max-width: 520px) { .plant-tags { display: none; } }
+    .tag { font-size: 0.65rem; letter-spacing: 0.08em; padding: 2px 7px; border: 1px solid var(--border); border-radius: 2px; color: var(--ink-light); white-space: nowrap; }
+    .tag.bloom  { border-color: var(--rust); color: var(--rust); }
+    .tag.native { border-color: var(--moss); color: var(--moss); }
+    .tag.foreign { border-color: var(--ink-light); color: var(--ink-light); font-style: italic; }
+    .plant-chevron { flex-shrink: 0; width: 16px; height: 16px; color: var(--ink-light); transition: transform 0.3s ease; }
+    .plant-card.open .plant-chevron { transform: rotate(180deg); }
+    .plant-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.35s ease; }
+    .plant-card.open .plant-body { grid-template-rows: 1fr; }
+    .plant-body-inner { overflow: hidden; }
+    .plant-body-content { padding: 0 0 1.5rem 3.1rem; display: grid; grid-template-columns: 1fr auto; gap: 1rem 2rem; align-items: start; }
+    @media (max-width: 520px) { .plant-body-content { grid-template-columns: 1fr; padding-left: 0; } }
+    .plant-notes { font-size: 0.88rem; color: var(--ink-mid); line-height: 1.85; }
+    .plant-meta { display: flex; flex-direction: column; gap: 0.45rem; min-width: 155px; }
+    .meta-row { font-size: 0.75rem; color: var(--ink-light); display: flex; gap: 0.4rem; }
+    .meta-row .label { color: var(--ink-mid); }
+
+    footer { margin-top: 5rem; padding-top: 2rem; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--ink-light); letter-spacing: 0.05em; }
+    .site-nav { border-bottom: 1px solid var(--border); margin-bottom: 3.5rem; padding: 0.9rem 0; display: flex; gap: 2rem; flex-wrap: wrap; }
+    .site-nav a { font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-light); text-decoration: none; transition: color 0.2s; cursor: pointer; }
+    .site-nav a:hover { color: var(--rust); }
+    .site-nav a.active { color: var(--rust); border-bottom: 1.5px solid var(--rust); padding-bottom: 2px; }
+    .page-section { display: none; }
+    .page-section.active { display: block; }
+    .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.4rem; margin: 2rem 0 3rem; }
+    .action-card { border: 1px solid var(--border); padding: 1.25rem 1.25rem 1.4rem; background: var(--parchment-dk); }
+    .action-num { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rust); margin-bottom: 0.55rem; }
+    .action-card h3 { font-family: var(--serif); font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--ink); }
+    .action-card p { font-size: 0.84rem; color: var(--ink-mid); line-height: 1.75; }
+    .resource-group { margin-bottom: 2.8rem; }
+    .resource-group h3 { font-family: var(--serif); font-size: 1.05rem; font-weight: 700; color: var(--ink); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    .resource-list { display: flex; flex-direction: column; gap: 1rem; }
+    .resource-item { border-top: 1px solid var(--border); padding-top: 0.85rem; }
+    .resource-item-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 0.3rem; }
+    .resource-title { font-family: var(--serif); font-size: 0.92rem; font-weight: 700; color: var(--ink); }
+    .resource-link { font-size: 0.75rem; color: var(--rust); text-decoration: none; white-space: nowrap; border-bottom: 1px solid transparent; transition: border-color 0.2s; flex-shrink: 0; }
+    .resource-link:hover { border-bottom-color: var(--rust); }
+    .resource-desc { font-size: 0.83rem; color: var(--ink-mid); line-height: 1.7; }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="header-eyebrow">A garden journal</p>
+    <h1>The Pollinator<br><em>Garden</em></h1>
+    <div class="header-rule"></div>
+  </header>
+
+  <nav class="site-nav">
+    <a class="active" onclick="showPage('garden')">The Garden</a>
+    <a onclick="showPage('action')">What You Can Do</a>
+    <a onclick="showPage('resources')">For More Information</a>
+  </nav>
+
+  <!-- PAGE: THE GARDEN -->
+  <div id="page-garden" class="page-section active">
+    <section class="intro">
+      <h2>Welcome to our native pollinator garden</h2>
+      <p>In this site we explain our purpose, share the plants we have, and offer some of the resources we found helpful as we set about changing our conception of what a garden can and should do.</p>
+      <p>Our journey began when we started learning about the insect apocalypse. We are in the midst of a crisis that gets less attention than climate change but is as important for our shared future. Across North America, populations of bees, butterflies, moths, beetles, and hummingbirds&mdash;the creatures responsible for pollinating roughly one-third of everything we eat&mdash;have declined sharply over the past half-century. Habitat loss is the primary driver. Ontario's meadows and forests, once rich with plant and animal diversity, have been systematically taken over by monocultural lawns, while &ldquo;weeds&rdquo; are eradicated with chemicals that poison the soil, water, insects and animals. The consequences of fraying the web of relationships between native plants and native pollinators could be dire for our own food chain, but also for all bird, amphibian, reptile, fish, and mammal life.</p>
+      <p>Native plants are not merely decorative. Over millions of years, they have co-evolved with local insects, developing the precise flower shapes, bloom times, nectars, and chemical signals that specialist pollinators depend on. The monarch butterfly can only complete its life cycle on milkweed.</p>
+      <div class="pull-quote">&ldquo;There&rsquo;s no way you can nail a bee with neonicotinoids, invasive pathogens, and climate change and come out with a happy bee.&rdquo; &mdash; Dr. Jeremy Kerr, University of Ottawa, <a href="https://amp.cbc.ca/lite/story/1.3145014" target="_blank" rel="noopener" style="color: var(--rust); text-decoration: none; border-bottom: 1px solid var(--rust);"><em>Science</em>, 2015</a></div>
+      <p>Our yard is small, but a front or back yard planting of native perennials, shrubs, and trees is not a small gesture. Research from the Ecological Design Lab at Toronto Metropolitan University has shown that even modest patches of native habitat meaningfully support bird and insect populations when connected across a neighbourhood. The cumulative effect of many small gardens is measurable at the landscape scale.</p>
+      <p>The plants were chosen for their ecological generosity: long bloom windows, high pollen and nectar value, larval host plant status, and resilience without irrigation or chemical inputs once established. We have some non-natives too, especially herbs and food plants.</p>
+    </section>
+    <div id="plant-sections"></div>
+  </div>
+
+  <!-- PAGE: WHAT YOU CAN DO -->
+  <div id="page-action" class="page-section">
+    <section class="intro">
+      <h2>What you can do</h2>
+      <p>You do not need a large property, specialist knowledge, or a significant budget to make a meaningful contribution to pollinator habitat in Ontario. The actions below are ordered roughly from smallest to largest commitment — any one of them has real ecological value.</p>
+    </section>
+
+    <div class="action-grid">
+      <div class="action-card">
+        <p class="action-num">Start here</p>
+        <h3>Stop mowing everything</h3>
+        <p>Leave a section of lawn unmowed from May through October. Within a single season it will be colonised by clovers, wild asters, and self-seeded native plants. Ground-nesting bees, which make up roughly 70% of Ontario's native bee species, require undisturbed bare or sparsely vegetated soil.</p>
+      </div>
+      <div class="action-card">
+        <p class="action-num">This season</p>
+        <h3>Plant one native perennial</h3>
+        <p>A single clump of purple coneflower, goldenrod, or wild bergamot will attract more pollinator species in a week than an entire bed of non-native annuals does all summer. Choose something native to your specific ecoregion — Ontario's Carolinian zone, mixed forests, and shield country each have their own best candidates.</p>
+      </div>
+      <div class="action-card">
+        <p class="action-num">This season</p>
+        <h3>Leave the leaves</h3>
+        <p>Do not bag or shred fallen leaves in autumn. Many native bees overwinter as adults or pupae in leaf litter — bumblebee queens, luna moth cocoons, and Baltimore checkerspot larvae all depend on undisturbed ground cover through the winter. Pile leaves under shrubs or in a garden corner rather than composting them immediately.</p>
+      </div>
+      <div class="action-card">
+        <p class="action-num">Ongoing</p>
+        <h3>Eliminate pesticides entirely</h3>
+        <p>Systemic insecticides, including neonicotinoids found in most nursery-bought plants, persist in plant tissue and pollen. Even "bee-safe" contact insecticides kill foraging insects indiscriminately. A garden with some pest damage but no pesticides supports far more life than a perfect-looking garden that has been chemically managed.</p>
+      </div>
+      <div class="action-card">
+        <p class="action-num">Ongoing</p>
+        <h3>Extend the season</h3>
+        <p>Most ornamental gardens bloom May through July and then go quiet. Pollinators need food from the moment bumblebee queens emerge in April through to monarch departure in October. Plant for early spring (prairie smoke, columbine, serviceberry) and late autumn (goldenrod, asters, ironweed) specifically — these shoulder seasons are where the ecological gaps are greatest.</p>
+      </div>
+      <div class="action-card">
+        <p class="action-num">Ongoing</p>
+        <h3>Add water</h3>
+        <p>A shallow dish of water with a few stones or corks for landing perches is used by bees, wasps, butterflies, and birds daily. Change it every two to three days to prevent mosquito breeding. Place it near — but not directly under — flowering plants so visitors find it naturally.</p>
+      </div>
+      <div class="action-card">
+        <p class="action-num">Longer term</p>
+        <h3>Replace lawn with native groundcovers</h3>
+        <p>Turfgrass is an ecological desert. Wild ginger (<em>Asarum canadense</em>), wild strawberry (<em>Fragaria virginiana</em>), Pennsylvania sedge (<em>Carex pensylvanica</em>), and creeping thyme can replace lawn sections incrementally. Each supports insects, requires no fertiliser, and tolerates Ontario winters without protection.</p>
+      </div>
+      <div class="action-card">
+        <p class="action-num">Longer term</p>
+        <h3>Talk to your neighbours</h3>
+        <p>Pollinator habitat is most effective when it forms a connected network across multiple properties. A corridor of native plantings through several adjacent gardens is exponentially more valuable than isolated patches. Local stewardship groups, community garden networks, and Ontario's Greenbelt Foundation all offer resources for neighbourhood-scale habitat planning.</p>
+      </div>
+      <div class="action-card">
+        <p class="action-num">Advocacy</p>
+        <h3>Push for pesticide-free public land</h3>
+        <p>Municipal roadsides, hydro corridors, and parks cover enormous areas of Ontario. Advocate for pollinator-friendly management of these spaces — many municipalities have pesticide bylaws that go unenforced, or mowing schedules that can be modified with minimal cost. Contact local councillors, conservation authorities, and land managers directly.</p>
+      </div>
+    </div>
+
+    <div class="pull-quote">&ldquo;The monarch population has declined by more than 80% since the 1990s. The rusty-patched bumblebee, once the most common bumblebee in Ontario, is now listed as Endangered under the federal Species at Risk Act. These are not distant extinctions. They are happening in gardens like this one.&rdquo;</div>
+  </div>
+
+  <!-- PAGE: FOR MORE INFORMATION -->
+  <div id="page-resources" class="page-section">
+    <section class="intro">
+      <h2>For more information</h2>
+      <p>A curated selection of organisations, identification tools, databases, and reading on pollinator habitat in Ontario and Canada. Weighted toward resources that are practical, Ontario-specific, and freely accessible.</p>
+    </section>
+
+    <div class="resource-group">
+      <h3>Ontario &amp; Canada — organisations</h3>
+      <div class="resource-list">
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Xerces Society — Canada</span>
+            <a class="resource-link" href="https://xerces.org/canada" target="_blank" rel="noopener">xerces.org/canada ↗</a>
+          </div>
+          <p class="resource-desc">The leading non-profit invertebrate conservation organisation in North America. Publishes extensively on pollinator-friendly plant lists for Ontario, pesticide policy, and farm habitat. Their plant lists are province-specific and scientifically vetted.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Ontario Native Plant Society</span>
+            <a class="resource-link" href="https://www.nativeplantsocietyontario.ca" target="_blank" rel="noopener">nativeplantsocietyontario.ca ↗</a>
+          </div>
+          <p class="resource-desc">Promotes the use and conservation of native plants across Ontario. Runs plant sales, seed swaps, and field identification workshops. A good starting point for finding locally sourced, ecotype-appropriate plants rather than nursery-propagated cultivars from distant regions.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Pollinator Partnership Canada</span>
+            <a class="resource-link" href="https://www.pollinatorpartnership.ca" target="_blank" rel="noopener">pollinatorpartnership.ca ↗</a>
+          </div>
+          <p class="resource-desc">Coordinates pollinator research, education, and habitat programmes across Canada. Publishes free regional planting guides keyed to Canadian ecoregions — the Great Lakes ecoregion guide is directly applicable to southern Ontario.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Canadian Wildlife Federation — Pollinator Watch</span>
+            <a class="resource-link" href="https://cwf-fcf.org/en/explore/bees-and-butterflies/" target="_blank" rel="noopener">cwf-fcf.org ↗</a>
+          </div>
+          <p class="resource-desc">Citizen science programmes for monitoring monarch butterflies, bumblebees, and native bees across Canada. Submitting observations directly supports population-level research on species of conservation concern in Ontario.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Toronto Entomologists' Association</span>
+            <a class="resource-link" href="https://www.ontarioinsects.org" target="_blank" rel="noopener">ontarioinsects.org ↗</a>
+          </div>
+          <p class="resource-desc">Maintains one of the best online resources for identifying Ontario's insects, including bees and butterflies. The species checklists and photo galleries are invaluable for putting names to what is actually visiting your garden.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Ecological Design Lab — Gardening for Biodiversity</span>
+            <a class="resource-link" href="https://ecologicaldesignlab.ca/project/gardening-for-biodiversity/" target="_blank" rel="noopener">ecologicaldesignlab.ca ↗</a>
+          </div>
+          <p class="resource-desc">A Toronto-based research and design practice working at the intersection of ecology, landscape architecture, and urban habitat. Their Gardening for Biodiversity project translates current ecological science into practical, place-specific guidance for Ontario gardeners — covering plant selection, garden structure, soil health, and the particular conditions of urban and suburban sites.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-group">
+      <h3>Identification &amp; observation tools</h3>
+      <div class="resource-list">
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">iNaturalist — Ontario observations</span>
+            <a class="resource-link" href="https://www.inaturalist.org/places/ontario" target="_blank" rel="noopener">inaturalist.org ↗</a>
+          </div>
+          <p class="resource-desc">The most powerful tool available for identifying what is visiting your garden. Upload a photograph and the community — and AI identification engine — will name it to species level within hours. Also generates a map of all bee and butterfly observations in your municipality, useful for understanding what is present locally.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Journey North — Monarch &amp; Hummingbird Tracking</span>
+            <a class="resource-link" href="https://journeynorth.org" target="_blank" rel="noopener">journeynorth.org ↗</a>
+          </div>
+          <p class="resource-desc">Tracks the seasonal migrations of monarchs and ruby-throated hummingbirds across North America in real time using citizen observations. Knowing when to expect the first hummingbirds in your part of Ontario helps in timing the bloom of early-season plants like columbine.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Bumble Bee Watch</span>
+            <a class="resource-link" href="https://www.bumblebeewatch.org" target="_blank" rel="noopener">bumblebeewatch.org ↗</a>
+          </div>
+          <p class="resource-desc">A joint initiative tracking bumblebee populations across North America. Ontario data contributes directly to monitoring of the rusty-patched bumblebee (Endangered) and yellow-banded bumblebee (Special Concern). The photo-based species guide is particularly useful for distinguishing Ontario's dozen bumblebee species.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-group">
+      <h3>Plant sourcing — Toronto &amp; Ontario</h3>
+      <div class="resource-list">
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Evergreen Garden Market (Toronto)</span>
+            <a class="resource-link" href="https://www.evergreen.ca/evergreen-brick-work/activities/evergreen-garden-market/" target="_blank" rel="noopener">evergreen.ca ↗</a>
+          </div>
+          <p class="resource-desc">A seasonal plant market at the Evergreen Brick Works in Toronto's Don Valley, running spring through autumn. Focuses on native and pollinator-friendly plants, with vendors selected for ecological value. The Brick Works site itself is a restored brownfield habitat and worth visiting as a model for urban ecological restoration.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Black Sheep Perennials</span>
+            <a class="resource-link" href="https://blacksheepperennials.com/" target="_blank" rel="noopener">blacksheepperennials.com ↗</a>
+          </div>
+          <p class="resource-desc">An Ontario nursery specialising in unusual and hard-to-find perennials, with a strong selection of native species alongside choice garden plants. Good source for the less-common natives on this list — liatris, chelone, and monarda species that most garden centres don't stock.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Fiesta Gardens</span>
+            <a class="resource-link" href="https://fiestagardens.ca/" target="_blank" rel="noopener">fiestagardens.ca ↗</a>
+          </div>
+          <p class="resource-desc">A Toronto-based garden retailer carrying a broad selection of perennials, annuals, and garden supplies, with native plants well represented in their stock. Useful for finding many of the plants on this list in person without ordering by mail.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Beaux Arbres Native Plants (Perth, ON)</span>
+            <a class="resource-link" href="https://beauxarbres.ca" target="_blank" rel="noopener">beauxarbres.ca ↗</a>
+          </div>
+          <p class="resource-desc">Specialises in native trees, shrubs, and perennials propagated from Ontario-local ecotypes. Local ecotype sourcing matters — plants grown from Ontario seed stock are better adapted to Ontario's photoperiod, soil chemistry, and climate than plants of the same species propagated in the US Midwest.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Pterophylla Native Plant Nursery (Freelton, ON)</span>
+            <a class="resource-link" href="https://pterophylla.ca" target="_blank" rel="noopener">pterophylla.ca ↗</a>
+          </div>
+          <p class="resource-desc">A small specialist nursery focused on southern Ontario's Carolinian zone species. Carries many plants difficult to find elsewhere, including rarer sedges, woodland perennials, and alvar species.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Wildflower Farm (Schomberg, ON)</span>
+            <a class="resource-link" href="https://wildflowerfarm.com" target="_blank" rel="noopener">wildflowerfarm.com ↗</a>
+          </div>
+          <p class="resource-desc">Canada's largest native wildflower seed producer. Excellent source for meadow mixes and bulk seed of Ontario species. Seed-grown plants are genetically diverse and more ecologically valuable than vegetatively propagated cultivars.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-group">
+      <h3>Reading</h3>
+      <div class="resource-list">
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">Bringing Nature Home — Doug Tallamy</span>
+          </div>
+          <p class="resource-desc">The book that most changed how ecologists and gardeners think about suburban habitat. Tallamy's research on the relationship between native plants and caterpillar diversity — and caterpillars and breeding birds — makes the ecological case for native planting more rigorously than anything else in print.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">The Living Landscape — Rick Darke &amp; Doug Tallamy</span>
+          </div>
+          <p class="resource-desc">A more design-focused companion to Bringing Nature Home. Covers how to create layered, ecologically functional planting design that is also aesthetically deliberate. Useful for moving from the ecological argument to actual garden planning.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">A Sting in the Tale — Dave Goulson</span>
+          </div>
+          <p class="resource-desc">The most readable account of bumblebee biology and decline available. Goulson's research team has done more to document and publicise bumblebee population collapse than almost anyone. Written for a general audience without sacrificing accuracy.</p>
+        </div>
+        <div class="resource-item">
+          <div class="resource-item-head">
+            <span class="resource-title">The Bees in Your Backyard — Wilson &amp; Carril</span>
+          </div>
+          <p class="resource-desc">The definitive field guide to North American native bees. Covers all major genera present in Ontario with photographs and ecological notes. Essential for anyone who wants to move beyond "it's a bee" to actually knowing what species are visiting their plants.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer><p>Compiled from field notes &amp; seed catalogues &mdash; updated seasonally.</p></footer>
+</div>
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.site-nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelector('.site-nav a[onclick="showPage(\'' + id + '\')"]').classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+const icons = {
+
+  "brome-sedge": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="26" x2="14" y2="4" stroke="#6b8f5e" stroke-width="1.4" stroke-linecap="round"/>
+    <line x1="14" y1="22" x2="9" y2="16" stroke="#6b8f5e" stroke-width="1.2" stroke-linecap="round"/>
+    <line x1="14" y1="18" x2="19" y2="13" stroke="#6b8f5e" stroke-width="1.2" stroke-linecap="round"/>
+    <line x1="14" y1="14" x2="9" y2="9" stroke="#6b8f5e" stroke-width="1.2" stroke-linecap="round"/>
+    <ellipse cx="9" cy="15.5" rx="2.2" ry="1" fill="#8aad7a" transform="rotate(-35 9 15.5)"/>
+    <ellipse cx="19" cy="12.5" rx="2.2" ry="1" fill="#8aad7a" transform="rotate(35 19 12.5)"/>
+    <ellipse cx="9" cy="8.5" rx="2.2" ry="1" fill="#8aad7a" transform="rotate(-35 9 8.5)"/>
+    <ellipse cx="14" cy="4.5" rx="1.5" ry="2.5" fill="#8aad7a"/>
+  </svg>`,
+
+  "big-bluestem": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="8" stroke="#8b6f3e" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="14" y1="10" x2="10" y2="5" stroke="#8b6f3e" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="14" y1="10" x2="14" y2="4" stroke="#8b6f3e" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="14" y1="10" x2="18" y2="5" stroke="#8b6f3e" stroke-width="1.3" stroke-linecap="round"/>
+    <ellipse cx="10" cy="4.5" rx="1.2" ry="2" fill="#c0834a"/>
+    <ellipse cx="14" cy="3.5" rx="1.2" ry="2" fill="#b87040"/>
+    <ellipse cx="18" cy="4.5" rx="1.2" ry="2" fill="#c0834a"/>
+    <path d="M8 18 Q5 15 6 11" stroke="#6b8f5e" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <path d="M18 20 Q22 17 21 13" stroke="#6b8f5e" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  "lupine": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="4" stroke="#5a7a42" stroke-width="1.4" stroke-linecap="round"/>
+    <ellipse cx="14" cy="5" rx="1.5" ry="2" fill="#7c5cbf"/>
+    <ellipse cx="14" cy="9" rx="1.5" ry="2" fill="#7c5cbf"/>
+    <ellipse cx="14" cy="13" rx="1.5" ry="2" fill="#8b68cc"/>
+    <ellipse cx="14" cy="17" rx="1.5" ry="2" fill="#9875d4"/>
+    <ellipse cx="11" cy="8" rx="1.2" ry="1.8" fill="#7c5cbf" transform="rotate(-15 11 8)"/>
+    <ellipse cx="17" cy="8" rx="1.2" ry="1.8" fill="#7c5cbf" transform="rotate(15 17 8)"/>
+    <ellipse cx="10" cy="13" rx="1.2" ry="1.8" fill="#8b68cc" transform="rotate(-20 10 13)"/>
+    <ellipse cx="18" cy="13" rx="1.2" ry="1.8" fill="#8b68cc" transform="rotate(20 18 13)"/>
+    <circle cx="8" cy="24" r="3.5" fill="#5a7a42" opacity="0.7"/>
+    <circle cx="14" cy="25" r="3.5" fill="#4d6e38" opacity="0.8"/>
+    <circle cx="20" cy="24" r="3.5" fill="#5a7a42" opacity="0.7"/>
+  </svg>`,
+
+  "white-goldenrod": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="12" stroke="#5a7a42" stroke-width="1.4" stroke-linecap="round"/>
+    <line x1="14" y1="14" x2="8" y2="10" stroke="#5a7a42" stroke-width="1" stroke-linecap="round"/>
+    <line x1="14" y1="13" x2="20" y2="9" stroke="#5a7a42" stroke-width="1" stroke-linecap="round"/>
+    <line x1="14" y1="12" x2="11" y2="7" stroke="#5a7a42" stroke-width="1" stroke-linecap="round"/>
+    <line x1="14" y1="12" x2="17" y2="7" stroke="#5a7a42" stroke-width="1" stroke-linecap="round"/>
+    <circle cx="8" cy="9.5" r="1.8" fill="#f0ece0" stroke="#c8bc98" stroke-width="0.5"/>
+    <circle cx="20" cy="8.5" r="1.8" fill="#f0ece0" stroke="#c8bc98" stroke-width="0.5"/>
+    <circle cx="11" cy="6.5" r="1.8" fill="#f0ece0" stroke="#c8bc98" stroke-width="0.5"/>
+    <circle cx="17" cy="6.5" r="1.8" fill="#f0ece0" stroke="#c8bc98" stroke-width="0.5"/>
+    <circle cx="14" cy="5" r="1.8" fill="#f5f0e8" stroke="#c8bc98" stroke-width="0.5"/>
+  </svg>`,
+
+  "nodding-onion": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 26 Q14 18 17 12" stroke="#5a7a42" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+    <path d="M17 12 Q20 8 18 5" stroke="#5a7a42" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <ellipse cx="18.5" cy="4.5" rx="3.5" ry="3" fill="#e8a0b8"/>
+    <ellipse cx="16.5" cy="6.5" rx="1" ry="2.5" fill="#d4789a" transform="rotate(-20 16.5 6.5)"/>
+    <ellipse cx="19" cy="5.5" rx="1" ry="2.5" fill="#d4789a" transform="rotate(10 19 5.5)"/>
+    <ellipse cx="21" cy="6" rx="1" ry="2.5" fill="#d4789a" transform="rotate(30 21 6)"/>
+    <ellipse cx="17" cy="7.5" rx="1" ry="2.5" fill="#e8a0b8" transform="rotate(-40 17 7.5)"/>
+    <path d="M10 22 Q9 18 11 16" stroke="#5a7a42" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  "coneflower": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="14" stroke="#5a7a42" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="14" cy="10" r="4" fill="#8b4a1a"/>
+    <circle cx="14" cy="10" r="2.8" fill="#7a3e14"/>
+    <ellipse cx="14" cy="5" rx="1.8" ry="3" fill="#d4789a" transform="rotate(0 14 5)"/>
+    <ellipse cx="19" cy="7" rx="1.8" ry="3" fill="#c86490" transform="rotate(60 19 7)"/>
+    <ellipse cx="21" cy="12" rx="1.8" ry="3" fill="#d4789a" transform="rotate(105 21 12)"/>
+    <ellipse cx="18" cy="17" rx="1.8" ry="3" fill="#c86490" transform="rotate(150 18 17)"/>
+    <ellipse cx="10" cy="17" rx="1.8" ry="3" fill="#d4789a" transform="rotate(-150 10 17)"/>
+    <ellipse cx="7" cy="12" rx="1.8" ry="3" fill="#c86490" transform="rotate(-105 7 12)"/>
+    <ellipse cx="9" cy="7" rx="1.8" ry="3" fill="#d4789a" transform="rotate(-60 9 7)"/>
+  </svg>`,
+
+  "columbine": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="16" stroke="#5a7a42" stroke-width="1.4" stroke-linecap="round"/>
+    <ellipse cx="14" cy="12" rx="2" ry="3.5" fill="#c0392b"/>
+    <ellipse cx="14" cy="12" rx="1.2" ry="2.5" fill="#e8c84a"/>
+    <ellipse cx="10" cy="13" rx="2" ry="3.5" fill="#c0392b" transform="rotate(-72 10 13)"/>
+    <ellipse cx="10.5" cy="13" rx="1.2" ry="2.5" fill="#e8c84a" transform="rotate(-72 10.5 13)"/>
+    <ellipse cx="11" cy="8" rx="2" ry="3.5" fill="#c0392b" transform="rotate(-144 11 8)"/>
+    <ellipse cx="11.5" cy="8.5" rx="1.2" ry="2.5" fill="#e8c84a" transform="rotate(-144 11.5 8.5)"/>
+    <ellipse cx="17" cy="8" rx="2" ry="3.5" fill="#c0392b" transform="rotate(144 17 8)"/>
+    <ellipse cx="16.5" cy="8.5" rx="1.2" ry="2.5" fill="#e8c84a" transform="rotate(144 16.5 8.5)"/>
+    <ellipse cx="18" cy="13" rx="2" ry="3.5" fill="#c0392b" transform="rotate(72 18 13)"/>
+    <ellipse cx="17.5" cy="13" rx="1.2" ry="2.5" fill="#e8c84a" transform="rotate(72 17.5 13)"/>
+  </svg>`,
+
+  "coreopsis": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="14" stroke="#5a7a42" stroke-width="1.4" stroke-linecap="round"/>
+    <circle cx="14" cy="11" r="3" fill="#c8920a"/>
+    <ellipse cx="14" cy="5.5" rx="2" ry="3" fill="#e8c030"/>
+    <ellipse cx="19.5" cy="8" rx="2" ry="3" fill="#e8c030" transform="rotate(60 19.5 8)"/>
+    <ellipse cx="20" cy="14.5" rx="2" ry="3" fill="#d4aa28" transform="rotate(120 20 14.5)"/>
+    <ellipse cx="14" cy="17.5" rx="2" ry="3" fill="#e8c030" transform="rotate(180 14 17.5)"/>
+    <ellipse cx="8" cy="14.5" rx="2" ry="3" fill="#d4aa28" transform="rotate(-120 8 14.5)"/>
+    <ellipse cx="8.5" cy="8" rx="2" ry="3" fill="#e8c030" transform="rotate(-60 8.5 8)"/>
+  </svg>`,
+
+  "blazing-star": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="4" stroke="#5a7a42" stroke-width="1.5" stroke-linecap="round"/>
+    <rect x="11.5" y="3" width="5" height="3" rx="1.5" fill="#8b4cbe"/>
+    <rect x="11.5" y="7.5" width="5" height="3" rx="1.5" fill="#9b5cce"/>
+    <rect x="11.5" y="12" width="5" height="3" rx="1.5" fill="#a868d4"/>
+    <rect x="11.5" y="16.5" width="5" height="3" rx="1.5" fill="#b878dc"/>
+    <line x1="10" y1="4.5" x2="7" y2="4.5" stroke="#8b4cbe" stroke-width="0.8"/>
+    <line x1="10" y1="9" x2="7" y2="9" stroke="#9b5cce" stroke-width="0.8"/>
+    <line x1="18" y1="4.5" x2="21" y2="4.5" stroke="#8b4cbe" stroke-width="0.8"/>
+    <line x1="18" y1="9" x2="21" y2="9" stroke="#9b5cce" stroke-width="0.8"/>
+    <line x1="10" y1="13.5" x2="7" y2="13.5" stroke="#a868d4" stroke-width="0.8"/>
+    <line x1="18" y1="13.5" x2="21" y2="13.5" stroke="#a868d4" stroke-width="0.8"/>
+  </svg>`,
+
+  "cinquefoil": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="14" stroke="#5a7a42" stroke-width="1.4" stroke-linecap="round"/>
+    <circle cx="14" cy="11" r="2" fill="#e8d090"/>
+    <ellipse cx="14" cy="6" rx="2.5" ry="2" fill="#f0e8d8"/>
+    <ellipse cx="19" cy="9.5" rx="2.5" ry="2" fill="#f0e8d8" transform="rotate(72 19 9.5)"/>
+    <ellipse cx="17" cy="15.5" rx="2.5" ry="2" fill="#f0e8d8" transform="rotate(144 17 15.5)"/>
+    <ellipse cx="11" cy="15.5" rx="2.5" ry="2" fill="#f0e8d8" transform="rotate(-144 11 15.5)"/>
+    <ellipse cx="9" cy="9.5" rx="2.5" ry="2" fill="#f0e8d8" transform="rotate(-72 9 9.5)"/>
+    <path d="M7 24 Q7 21 10 20 Q14 19 14 19" stroke="#5a7a42" stroke-width="1" fill="none"/>
+    <path d="M21 24 Q21 21 18 20 Q14 19 14 19" stroke="#5a7a42" stroke-width="1" fill="none"/>
+  </svg>`,
+
+  "turtlehead": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="8" stroke="#5a7a42" stroke-width="1.5" stroke-linecap="round"/>
+    <ellipse cx="14" cy="6" rx="4" ry="2.5" fill="#e8ede0" stroke="#b8c8a0" stroke-width="0.8"/>
+    <ellipse cx="14" cy="10" rx="3.5" ry="2.5" fill="#e8ede0" stroke="#b8c8a0" stroke-width="0.8"/>
+    <ellipse cx="14" cy="14" rx="3" ry="2.2" fill="#dde8d4" stroke="#b8c8a0" stroke-width="0.8"/>
+    <path d="M10 6 Q8 5 8 7" stroke="#b8c8a0" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+    <path d="M18 6 Q20 5 20 7" stroke="#b8c8a0" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+    <path d="M6 20 Q8 18 11 19" stroke="#5a7a42" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <path d="M22 21 Q20 18 17 19" stroke="#5a7a42" stroke-width="1" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  "iris": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="14" stroke="#5a7a42" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M14 14 Q10 10 9 6 Q11 4 14 8 Q17 4 19 6 Q18 10 14 14Z" fill="#6a78c8"/>
+    <path d="M14 14 Q10 16 7 15 Q6 12 10 11 Q12 10 14 14Z" fill="#8a8ed8" opacity="0.9"/>
+    <path d="M14 14 Q18 16 21 15 Q22 12 18 11 Q16 10 14 14Z" fill="#8a8ed8" opacity="0.9"/>
+    <path d="M14 14 Q11 18 10 22 Q13 23 14 19 Q15 23 18 22 Q17 18 14 14Z" fill="#6a78c8" opacity="0.8"/>
+    <line x1="14" y1="10" x2="14" y2="13" stroke="#f0e8c0" stroke-width="0.8" opacity="0.7"/>
+  </svg>`,
+
+  "bee-balm": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="14" stroke="#5a7a42" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="14" cy="12" r="3" fill="#d4a830"/>
+    <ellipse cx="14" cy="5.5" rx="1" ry="3" fill="#e8a820"/>
+    <ellipse cx="19.5" cy="7.5" rx="1" ry="3" fill="#e8a820" transform="rotate(60 19.5 7.5)"/>
+    <ellipse cx="20.5" cy="14" rx="1" ry="3" fill="#c89818" transform="rotate(110 20.5 14)"/>
+    <ellipse cx="7.5" cy="7.5" rx="1" ry="3" fill="#e8a820" transform="rotate(-60 7.5 7.5)"/>
+    <ellipse cx="6.5" cy="14" rx="1" ry="3" fill="#c89818" transform="rotate(-110 6.5 14)"/>
+    <ellipse cx="10" cy="18" rx="1" ry="3" fill="#e8a820" transform="rotate(-145 10 18)"/>
+    <ellipse cx="18" cy="18" rx="1" ry="3" fill="#e8a820" transform="rotate(145 18 18)"/>
+    <ellipse cx="9" cy="20" rx="2.5" ry="1.5" fill="#d48aa0" opacity="0.7"/>
+    <ellipse cx="14" cy="22" rx="2.5" ry="1.5" fill="#c8789a" opacity="0.7"/>
+    <ellipse cx="19" cy="20" rx="2.5" ry="1.5" fill="#d48aa0" opacity="0.7"/>
+  </svg>`,
+
+  "prairie-smoke": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="17" stroke="#5a7a42" stroke-width="1.4" stroke-linecap="round"/>
+    <line x1="14" y1="19" x2="9" y2="14" stroke="#5a7a42" stroke-width="1.1" stroke-linecap="round"/>
+    <line x1="14" y1="18" x2="14" y2="12" stroke="#5a7a42" stroke-width="1.1" stroke-linecap="round"/>
+    <line x1="14" y1="19" x2="19" y2="14" stroke="#5a7a42" stroke-width="1.1" stroke-linecap="round"/>
+    <ellipse cx="9" cy="12.5" rx="2" ry="3" fill="#b04860" transform="rotate(-10 9 12.5)"/>
+    <ellipse cx="14" cy="10.5" rx="2" ry="3" fill="#c05870"/>
+    <ellipse cx="19" cy="12.5" rx="2" ry="3" fill="#b04860" transform="rotate(10 19 12.5)"/>
+    <path d="M7 8 Q8 5 9 6" stroke="#c89898" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+    <path d="M13 6 Q14 3 14 4" stroke="#c89898" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+    <path d="M19 8 Q20 5 19 6" stroke="#c89898" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  "swamp-milkweed": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="6" stroke="#5a7a42" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M8 19 Q5 17 6 14" stroke="#5a7a42" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+    <path d="M20 21 Q23 19 22 16" stroke="#5a7a42" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+    <ellipse cx="14" cy="8" rx="5" ry="4.5" fill="#d4789a"/>
+    <ellipse cx="11" cy="7" rx="1.5" ry="2" fill="#e890b0" transform="rotate(-20 11 7)"/>
+    <ellipse cx="13" cy="5.5" rx="1.5" ry="2" fill="#e890b0" transform="rotate(-5 13 5.5)"/>
+    <ellipse cx="15" cy="5.5" rx="1.5" ry="2" fill="#e890b0" transform="rotate(5 15 5.5)"/>
+    <ellipse cx="17" cy="7" rx="1.5" ry="2" fill="#e890b0" transform="rotate(20 17 7)"/>
+    <circle cx="14" cy="9" r="2" fill="#c05880"/>
+    <circle cx="14" cy="9" r="1" fill="#f0c0d0"/>
+  </svg>`,
+
+  "joe-pye": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="6" stroke="#6a5a3a" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M9 18 Q6 16 7 13" stroke="#5a7a42" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+    <path d="M19 16 Q22 14 21 11" stroke="#5a7a42" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+    <ellipse cx="9.5" cy="20" rx="3" ry="1.2" fill="#6a9050" transform="rotate(-30 9.5 20)"/>
+    <ellipse cx="18.5" cy="18" rx="3" ry="1.2" fill="#6a9050" transform="rotate(30 18.5 18)"/>
+    <circle cx="14" cy="6" r="5" fill="#c878b8"/>
+    <circle cx="11" cy="5" r="1.3" fill="#d890c8"/>
+    <circle cx="13.5" cy="3.5" r="1.3" fill="#e0a0d0"/>
+    <circle cx="16.5" cy="4" r="1.3" fill="#d890c8"/>
+    <circle cx="17.5" cy="7" r="1.3" fill="#d080b8"/>
+    <circle cx="15" cy="9" r="1.3" fill="#d890c8"/>
+    <circle cx="12" cy="8.5" r="1.3" fill="#d080b8"/>
+    <circle cx="10.5" cy="6.5" r="1.1" fill="#f0b8e0"/>
+  </svg>`,
+
+  "beets": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="20" x2="14" y2="26" stroke="#8b3a5a" stroke-width="1.4" stroke-linecap="round"/>
+    <circle cx="14" cy="17" r="6" fill="#8b2050"/>
+    <ellipse cx="14" cy="17" rx="4" ry="6" fill="#a03060" opacity="0.5"/>
+    <path d="M10 10 Q8 5 11 4 Q13 8 14 11" stroke="#5a7a42" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <path d="M14 10 Q13 4 15 3 Q16 7 15 11" stroke="#4d6e38" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <path d="M18 10 Q20 5 17 4 Q15 8 14 11" stroke="#5a7a42" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="10" cy="6" rx="2.5" ry="1.5" fill="#6a9a50" transform="rotate(-20 10 6)"/>
+    <ellipse cx="15" cy="4.5" rx="2" ry="1.5" fill="#5a8a42"/>
+    <ellipse cx="18" cy="6" rx="2.5" ry="1.5" fill="#6a9a50" transform="rotate(20 18 6)"/>
+  </svg>`,
+
+  "lavender": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="10" y1="27" x2="10" y2="16" stroke="#8aad6a" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="14" y1="27" x2="14" y2="14" stroke="#7a9d5a" stroke-width="1.4" stroke-linecap="round"/>
+    <line x1="18" y1="27" x2="18" y2="16" stroke="#8aad6a" stroke-width="1.3" stroke-linecap="round"/>
+    <ellipse cx="10" cy="14" rx="1.8" ry="2.5" fill="#9c6fcc"/>
+    <ellipse cx="10" cy="10.5" rx="1.8" ry="2.5" fill="#a87cd8"/>
+    <ellipse cx="10" cy="7" rx="1.8" ry="2.5" fill="#b888e0"/>
+    <ellipse cx="14" cy="12" rx="1.8" ry="2.5" fill="#9c6fcc"/>
+    <ellipse cx="14" cy="8.5" rx="1.8" ry="2.5" fill="#a87cd8"/>
+    <ellipse cx="14" cy="5" rx="1.8" ry="2.5" fill="#b888e0"/>
+    <ellipse cx="18" cy="14" rx="1.8" ry="2.5" fill="#9c6fcc"/>
+    <ellipse cx="18" cy="10.5" rx="1.8" ry="2.5" fill="#a87cd8"/>
+    <ellipse cx="18" cy="7" rx="1.8" ry="2.5" fill="#b888e0"/>
+    <ellipse cx="8" cy="24" rx="3" ry="1.2" fill="#6a9a50" transform="rotate(-15 8 24)"/>
+    <ellipse cx="20" cy="24" rx="3" ry="1.2" fill="#6a9a50" transform="rotate(15 20 24)"/>
+  </svg>`,
+
+  "poppy-mallow": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 27 Q12 22 10 18 Q9 14 14 14 Q19 14 18 18 Q16 22 14 27Z" stroke="#5a7a42" stroke-width="1" fill="#6a9a50" opacity="0.4"/>
+    <circle cx="14" cy="11" r="2.5" fill="#f0e060"/>
+    <ellipse cx="14" cy="5" rx="3" ry="4" fill="#b8305a"/>
+    <ellipse cx="20" cy="8.5" rx="3" ry="4" fill="#c03868" transform="rotate(72 20 8.5)"/>
+    <ellipse cx="18" cy="16" rx="3" ry="4" fill="#b8305a" transform="rotate(144 18 16)"/>
+    <ellipse cx="10" cy="16" rx="3" ry="4" fill="#c03868" transform="rotate(-144 10 16)"/>
+    <ellipse cx="8" cy="8.5" rx="3" ry="4" fill="#b8305a" transform="rotate(-72 8 8.5)"/>
+  </svg>`,
+
+  "wild-rye": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="3" stroke="#7a9a5a" stroke-width="1.5" stroke-linecap="round"/>
+    <ellipse cx="14" cy="6" rx="1.4" ry="2.8" fill="#9ab870"/>
+    <ellipse cx="11.5" cy="9.5" rx="1.3" ry="2.5" fill="#88a860" transform="rotate(-12 11.5 9.5)"/>
+    <ellipse cx="16.5" cy="8" rx="1.3" ry="2.5" fill="#9ab870" transform="rotate(12 16.5 8)"/>
+    <ellipse cx="11" cy="13.5" rx="1.3" ry="2.5" fill="#88a860" transform="rotate(-15 11 13.5)"/>
+    <ellipse cx="17" cy="12" rx="1.3" ry="2.5" fill="#9ab870" transform="rotate(15 17 12)"/>
+    <ellipse cx="11" cy="17.5" rx="1.3" ry="2.3" fill="#a0b878" transform="rotate(-18 11 17.5)"/>
+    <ellipse cx="17" cy="16" rx="1.3" ry="2.3" fill="#9ab870" transform="rotate(18 17 16)"/>
+    <path d="M7 23 Q9 21 12 22" stroke="#7a9a5a" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <path d="M21 24 Q19 22 16 23" stroke="#7a9a5a" stroke-width="1" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  "solomon-seal": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6 5 Q14 3 22 8 Q20 14 16 20 Q14 24 12 27" stroke="#5a7a42" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="10" cy="9" rx="4" ry="2" fill="#6a9a50" transform="rotate(-20 10 9)"/>
+    <ellipse cx="16" cy="7" rx="4" ry="2" fill="#7aaa5a" transform="rotate(-10 16 7)"/>
+    <ellipse cx="20" cy="11" rx="4" ry="2" fill="#6a9a50" transform="rotate(10 20 11)"/>
+    <ellipse cx="19" cy="16" rx="4" ry="2" fill="#7aaa5a" transform="rotate(25 19 16)"/>
+    <ellipse cx="15" cy="21" rx="3.5" ry="1.8" fill="#6a9a50" transform="rotate(35 15 21)"/>
+    <line x1="10" y1="11" x2="9" y2="15" stroke="#d0e8d0" stroke-width="0.8" stroke-linecap="round"/>
+    <line x1="16" y1="9" x2="15" y2="13" stroke="#d0e8d0" stroke-width="0.8" stroke-linecap="round"/>
+    <line x1="20" y1="13" x2="19.5" y2="17" stroke="#d0e8d0" stroke-width="0.8" stroke-linecap="round"/>
+    <ellipse cx="9" cy="16" rx="1" ry="2" fill="#e8f0d8"/>
+    <ellipse cx="15" cy="14" rx="1" ry="2" fill="#e8f0d8"/>
+    <ellipse cx="19.5" cy="18" rx="1" ry="2" fill="#e8f0d8"/>
+  </svg>`,
+
+  "rhubarb": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="10" y1="27" x2="11" y2="17" stroke="#c03040" stroke-width="2" stroke-linecap="round"/>
+    <line x1="14" y1="27" x2="14" y2="15" stroke="#d04050" stroke-width="2.2" stroke-linecap="round"/>
+    <line x1="18" y1="27" x2="17" y2="17" stroke="#c03040" stroke-width="2" stroke-linecap="round"/>
+    <ellipse cx="9" cy="14" rx="5.5" ry="3.5" fill="#4a7838" transform="rotate(-15 9 14)"/>
+    <ellipse cx="19" cy="13" rx="5" ry="3.2" fill="#3a6828" transform="rotate(20 19 13)"/>
+    <ellipse cx="14" cy="11" rx="5.5" ry="3.5" fill="#4a7838"/>
+    <line x1="9" cy="14" x2="6" y2="14" stroke="#5a8a45" stroke-width="0.7" stroke-linecap="round"/>
+    <line x1="19" y1="13" x2="22" y2="12" stroke="#5a8a45" stroke-width="0.7" stroke-linecap="round"/>
+    <line x1="14" y1="11" x2="14" y2="8" stroke="#5a8a45" stroke-width="0.7" stroke-linecap="round"/>
+  </svg>`,
+
+  "thyme": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 27 Q12 23 10 20 Q8 17 9 14 Q11 11 14 13 Q17 11 19 14 Q20 17 18 20 Q16 23 14 27Z" stroke="#7a9a50" stroke-width="1" fill="#9ab868" opacity="0.5"/>
+    <ellipse cx="10" cy="19" rx="2" ry="1.2" fill="#8aaa58" transform="rotate(-20 10 19)"/>
+    <ellipse cx="9.5" cy="16" rx="2" ry="1.2" fill="#9ab868" transform="rotate(-25 9.5 16)"/>
+    <ellipse cx="18" cy="19" rx="2" ry="1.2" fill="#8aaa58" transform="rotate(20 18 19)"/>
+    <ellipse cx="18.5" cy="16" rx="2" ry="1.2" fill="#9ab868" transform="rotate(25 18.5 16)"/>
+    <ellipse cx="12" cy="14" rx="2" ry="1.2" fill="#8aaa58" transform="rotate(-10 12 14)"/>
+    <ellipse cx="16" cy="14" rx="2" ry="1.2" fill="#9ab868" transform="rotate(10 16 14)"/>
+    <circle cx="10.5" cy="11" r="1.5" fill="#c878c0"/>
+    <circle cx="14" cy="9.5" r="1.5" fill="#d888d0"/>
+    <circle cx="17.5" cy="11" r="1.5" fill="#c878c0"/>
+    <circle cx="12" cy="8" r="1.2" fill="#d888d0"/>
+    <circle cx="16" cy="8" r="1.2" fill="#c878c0"/>
+  </svg>`,
+
+  "chives": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="10" y1="27" x2="10" y2="13" stroke="#5a8a42" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="13" y1="27" x2="13" y2="11" stroke="#4a7a35" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="16" y1="27" x2="16" y2="12" stroke="#5a8a42" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="19" y1="27" x2="19" y2="14" stroke="#4a7a35" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="10" cy="10.5" r="3.2" fill="#b060b8"/>
+    <circle cx="13" cy="8.5" r="3.2" fill="#c070c8"/>
+    <circle cx="16" cy="9.5" r="3.2" fill="#b060b8"/>
+    <circle cx="19" cy="11.5" r="2.8" fill="#c070c8"/>
+    <circle cx="10" cy="10.5" r="1.5" fill="#d090d8" opacity="0.6"/>
+    <circle cx="13" cy="8.5" r="1.5" fill="#d090d8" opacity="0.6"/>
+    <circle cx="16" cy="9.5" r="1.5" fill="#d090d8" opacity="0.6"/>
+  </svg>`,
+
+  "lemon-grass": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="3" stroke="#a0b840" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M14 10 Q8 8 6 12 Q8 15 14 14" stroke="#90a830" stroke-width="1.1" fill="#b8d050" opacity="0.6" stroke-linecap="round"/>
+    <path d="M14 14 Q20 12 22 16 Q20 19 14 18" stroke="#90a830" stroke-width="1.1" fill="#b8d050" opacity="0.6" stroke-linecap="round"/>
+    <path d="M14 18 Q8 16 6 20 Q8 23 14 22" stroke="#90a830" stroke-width="1.1" fill="#c0d858" opacity="0.5" stroke-linecap="round"/>
+    <ellipse cx="14" cy="5" rx="2" ry="3" fill="#c8d858" opacity="0.8"/>
+  </svg>`,
+
+  "basil": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="6" stroke="#4a7838" stroke-width="1.4" stroke-linecap="round"/>
+    <line x1="14" y1="18" x2="9" y2="14" stroke="#4a7838" stroke-width="1" stroke-linecap="round"/>
+    <line x1="14" y1="15" x2="19" y2="11" stroke="#4a7838" stroke-width="1" stroke-linecap="round"/>
+    <line x1="14" y1="22" x2="19" y2="18" stroke="#4a7838" stroke-width="1" stroke-linecap="round"/>
+    <ellipse cx="8" cy="13" rx="3.5" ry="2.2" fill="#3a8030" transform="rotate(-20 8 13)"/>
+    <ellipse cx="19.5" cy="10" rx="3.5" ry="2.2" fill="#4a9038" transform="rotate(15 19.5 10)"/>
+    <ellipse cx="20" cy="17" rx="3.2" ry="2" fill="#3a8030" transform="rotate(25 20 17)"/>
+    <ellipse cx="14" cy="9" rx="3" ry="2" fill="#4a9038" transform="rotate(-5 14 9)"/>
+    <circle cx="14" cy="5.5" r="2.5" fill="#d0d8c0"/>
+    <circle cx="12" cy="4.5" r="1.5" fill="#c8d0b8"/>
+    <circle cx="16" cy="4.5" r="1.5" fill="#d0d8c0"/>
+  </svg>`,
+
+  "raspberry": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 24 Q9 20 8 15 Q8 10 12 9 Q14 8 14 11 Q14 8 16 9 Q20 10 20 15 Q19 20 14 24Z" fill="#c03058" stroke="#983048" stroke-width="0.8"/>
+    <circle cx="11" cy="14" r="2" fill="#d84068"/>
+    <circle cx="14" cy="12.5" r="2" fill="#e05070"/>
+    <circle cx="17" cy="14" r="2" fill="#d84068"/>
+    <circle cx="11.5" cy="17.5" r="2" fill="#e05070"/>
+    <circle cx="14.5" cy="19" r="2" fill="#d84068"/>
+    <circle cx="17" cy="17.5" r="2" fill="#e05070"/>
+    <circle cx="11" cy="14" r="0.8" fill="#f08098"/>
+    <circle cx="14" cy="12.5" r="0.8" fill="#f08098"/>
+    <circle cx="17" cy="14" r="0.8" fill="#f08098"/>
+    <path d="M10 9 Q8 5 10 4 Q12 6 11 9" stroke="#5a8a42" stroke-width="1" fill="#7aaa52" stroke-linecap="round"/>
+    <path d="M18 9 Q20 5 18 4 Q16 6 17 9" stroke="#5a8a42" stroke-width="1" fill="#7aaa52" stroke-linecap="round"/>
+    <ellipse cx="10" cy="5.5" rx="2.5" ry="1.5" fill="#7aaa52" transform="rotate(-15 10 5.5)"/>
+    <ellipse cx="18" cy="5.5" rx="2.5" ry="1.5" fill="#6a9a45" transform="rotate(15 18 5.5)"/>
+  </svg>`,
+};
+
+const sections = [
+  {
+    title: "Grasses & sedges",
+    desc: "Structural grasses that provide nesting material, overwintering habitat, and larval food sources for specialist moths and skippers.",
+    plants: [
+      {id:"brome-sedge",common:"Brome-like Sedge",latin:"Carex bromoides",bloom:"Apr – May",pollinators:["song sparrows (seed)","swamp sparrows (seed)","Acadian hairstreak (larval)"],native:"Eastern N. America",notes:"A fine-textured, shade-tolerant sedge that forms graceful clumping tufts in moist to medium soils. Its seed heads are an important early-season food source for ground-foraging sparrows. Sedges provide structural complexity at low heights, creating microhabitat for ground-nesting bees and overwintering beetle larvae. Excellent for woodland edges and areas beneath canopy trees where little else will grow."},
+      {id:"big-bluestem",common:"Big Bluestem",latin:"Andropogon gerardii",bloom:"Aug – Oct",pollinators:["Delaware skipper (larval)","Dusted skipper (larval)","Sachem skipper","aphid-hunting wasps"],native:"Central & Eastern N. America",notes:"The signature grass of the tallgrass prairie, once widespread across southwestern Ontario's Carolinian zone. Dramatic bronze-red autumn colour and distinctive three-parted seed heads—the 'turkey foot.' A larval host for Delaware and Dusted skippers, both present in Ontario. Deep root systems build organic matter and stabilise soil. Provides critical winter cover for overwintering insects and ground-nesting birds."},
+      {id:"wild-rye",common:"Canada Wild Rye",latin:"Elymus canadensis",bloom:"Jul – Sep",pollinators:["Dusted skipper (larval)","Leonard's skipper (larval)","grasshoppers (seed)","American tree sparrow (seed)"],native:"N. America (widespread) — native to ON",notes:"A robust, arching native grass with distinctive nodding seed heads adorned with long, outward-curving awns — among the most architecturally striking of Ontario's native grasses. A larval host plant for several skipper butterflies, including Leonard's skipper, a species of conservation concern in Ontario whose populations are closely tied to native grass abundance. Highly adaptable: tolerates drought, clay, and part shade. Self-seeds readily; useful as a meadow filler and for slope stabilisation."},
+    ]
+  },
+  {
+    title: "Native flowers",
+    desc: "Perennials and biennials native to eastern and central North America, chosen for successive bloom and high ecological value.",
+    plants: [
+      {id:"lupine",common:"Large-leaved Lupine",latin:"Lupinus polyphyllus",bloom:"May – Jul",pollinators:["yellow bumblebee (Bombus fervidus)","half-black bumblebee (Bombus vagans)","Karner blue butterfly (larval — extirpated ON)"],native:"Western N. America",notes:"Tall spires of violet-blue to pink flowers adapted for bumblebees—the weight of a landing bee depresses the keel and deposits pollen on the bee's underside. In Ontario, yellow bumblebees and half-black bumblebees are the primary visitors. Historically a larval host for the Karner blue butterfly, now extirpated from Ontario. Fixes atmospheric nitrogen through root nodules. Prefers cool, moist conditions; naturalises readily in meadow settings."},
+      {id:"white-goldenrod",common:"Upland White Goldenrod",latin:"Solidago ptarmicoides",bloom:"Jul – Sep",pollinators:["ligated furrow bee (Halictus ligatus)","sweat bees (Lasioglossum spp.)","tumbling flower beetles (Mordella spp.)","drone flies (Eristalis spp.)"],native:"Eastern & Central N. America",notes:"The most graceful of the goldenrods, with flat-topped clusters of small white flowers on wiry, arching stems. In Ontario it draws a rich array of small halictid bees—particularly sweat bees of the genus Lasioglossum, which are among the most abundant native bees in the province. Tumbling flower beetles and drone flies are reliable secondary visitors. Never spreads aggressively. Thrives in lean, well-drained soils."},
+      {id:"nodding-onion",common:"Nodding Onion",latin:"Allium cernuum",bloom:"Jul – Aug",pollinators:["brown-belted bumblebee (Bombus griseocollis)","Eastern sweat bee (Halictus rubicundus)","silver-spotted skipper","cabbage white (nectar only)"],native:"N. America (widespread)",notes:"A delicate native allium whose pink-to-white flower heads nod on arching stems—the nod deters nectar theft by short-tongued visitors while admitting the longer-tongued bees that transfer pollen most effectively. In Ontario, brown-belted bumblebees are frequently observed working these flowers. One of the few native bulbs with significant pollinator value. Deer-resistant. Self-seeds to form quiet colonies over time."},
+      {id:"coneflower",common:"Purple Coneflower",latin:"Echinacea purpurea",bloom:"Jul – Sep",pollinators:["two-spotted bumblebee (Bombus bimaculatus)","common eastern bumblebee (Bombus impatiens)","giant swallowtail","black swallowtail","American goldfinch (seed)"],native:"Eastern N. America",notes:"One of the workhorses of any Ontario pollinator planting. Common eastern bumblebees (the most widespread Ontario bumblebee) work the central cone methodically, while giant swallowtails—expanding their range northward into southern Ontario—are increasingly frequent visitors. Leave seed heads standing through winter for American goldfinches. Tolerates drought and clay. Divide every three to four years."},
+      {id:"columbine",common:"Red Columbine",latin:"Aquilegia canadensis",bloom:"Apr – Jun",pollinators:["ruby-throated hummingbird","tri-coloured bumblebee (Bombus ternarius)","common eastern bumblebee (nectar robbing)","Baltimore checkerspot (nectar)"],native:"Eastern N. America",notes:"A spring-blooming woodland perennial perfectly shaped for the ruby-throated hummingbird, which arrives in southern Ontario in early May—timed closely with this plant's peak bloom. Tri-coloured bumblebees are legitimate pollinators; common eastern bumblebees often rob nectar by piercing the spurs. Baltimore checkerspots, a species of conservation concern in Ontario, visit for nectar. Self-seeds modestly in part-shade."},
+      {id:"coreopsis",common:"Lance-leaved Coreopsis",latin:"Coreopsis lanceolata",bloom:"May – Jul",pollinators:["mining bees (Andrena spp.)","long-horned bees (Melissodes spp.)","Peck's skipper","hobomok skipper"],native:"Eastern & Central N. America",notes:"One of the earliest-blooming native composites in the Ontario garden. Mining bees in the genus Andrena are among the first visitors when flowers open in late May; long-horned bees become dominant through June and July. Hobomok and Peck's skippers, both common in Ontario meadows, are reliable nectar visitors. Very drought-tolerant; thrives in poor, sandy soils. Short-lived but self-seeds prolifically."},
+      {id:"blazing-star",common:"Cylindric Blazing Star",latin:"Liatris cylindracea",bloom:"Jul – Sep",pollinators:["monarch (nectaring, migration fuelling)","coral hairstreak","brow-belted bumblebee (Bombus griseocollis)","clouded sulphur"],native:"Central N. America — native to ON alvar",notes:"Notably, this species is actually native to Ontario's alvars and limestone barrens around Georgian Bay and the Bruce Peninsula—one of the few liatris with a genuine Ontario provenance. Blooms bottom-up on stiff spikes precisely during monarch migration. Coral hairstreaks, a species characteristic of Ontario's Carolinian and mixed forest zones, are consistent visitors. Suited to dry, rocky, or lean soils."},
+      {id:"cinquefoil",common:"Tall Cinquefoil",latin:"Drymocallis arguta",bloom:"Jun – Aug",pollinators:["small mining bees (Andrena spp.)","sweat bees (Lasioglossum spp.)","locust borer beetle (Megacyllene robiniae)","soldier beetles (Chauliognathus spp.)"],native:"N. America (widespread)",notes:"An underused native perennial with small white five-petalled flowers on tall, sticky-hairy stems. The open flower structure is highly accessible to short-tongued bees—small Andrena mining bees and Lasioglossum sweat bees are the most frequent Ontario visitors. Soldier beetles, conspicuous orange-and-black beetles common in Ontario in late summer, visit reliably. Tolerates dry, rocky soils and part shade."},
+      {id:"turtlehead",common:"Turtlehead",latin:"Chelone glabra",bloom:"Aug – Sep",pollinators:["common eastern bumblebee (Bombus impatiens — primary)","yellow bumblebee (Bombus fervidus)","Baltimore checkerspot (larval host)"],native:"Eastern N. America",notes:"Almost exclusively pollinated by large bumblebees—the hinged lip requires the mass of a Bombus worker to open, and in Ontario the common eastern bumblebee is the dominant visitor. Critically, this is a larval host plant for the Baltimore checkerspot butterfly, designated a species of special concern in Ontario. Requires reliably moist to wet soils; an excellent choice for Ontario rain gardens and stream margins."},
+      {id:"iris",common:"Arctic Iris",latin:"Iris setosa subsp. arctica",bloom:"May – Jun",pollinators:["yellow-banded bumblebee (Bombus terricola)","half-black bumblebee (Bombus vagans)","mason bees (Osmia spp.)"],native:"Arctic & Subarctic N. America — Hudson Bay coast",notes:"Native to Ontario's Hudson Bay lowlands and subarctic coastline, though rarely grown in southern Ontario gardens. Yellow-banded bumblebees—a species of special concern in Ontario whose range extends into the boreal zone—are likely primary pollinators in its native habitat. In southern Ontario gardens it attracts early mason bees and the larger bumblebee queens. Well-adapted to cold, wet, acidic soils; useful at pond edges."},
+      {id:"bee-balm",common:"Spotted Bee Balm",latin:"Monarda punctata",bloom:"Jul – Sep",pollinators:["common eastern bumblebee (Bombus impatiens)","eastern carpenter bee (Xylocopa virginica)","great black wasp (Sphex pensylvanicus)","spicebush swallowtail","pearl crescent"],native:"Eastern & Central N. America",notes:"Perhaps the single most ecologically productive plant for Ontario native bees in late summer. Eastern carpenter bees—large, conspicuous, and common in Ontario—are major visitors. Great black wasps, a striking solitary wasp common in Ontario meadows, are reliable late-season visitors. Pearl crescents and spicebush swallowtails complete the picture. Biennial to short-lived perennial; reseeds reliably in sandy soils."},
+      {id:"prairie-smoke",common:"Prairie Smoke",latin:"Geum triflorum",bloom:"Apr – Jun",pollinators:["two-spotted bumblebee (Bombus bimaculatus — queen)","half-black bumblebee (Bombus vagans — queen)","early mining bees (Andrena spp.)"],native:"Central & Eastern N. America — native to ON alvar & prairie remnants",notes:"Native to Ontario's alvar grasslands and Carolinian prairie remnants, and among the very first wildflowers to bloom. Bumblebee queens, freshly emerged from winter dormancy in April, are the primary pollinators—the flowers are too early for most worker bees. In Ontario, two-spotted bumblebees are the earliest-emerging large bumblebee species and the most important visitors. The feathery smoke-like seed plumes that follow are spectacular."},
+      {id:"swamp-milkweed",common:"Swamp Milkweed",latin:"Asclepias incarnata",bloom:"Jul – Aug",pollinators:["monarch (larval host & nectar)","great spangled fritillary","common eastern bumblebee (Bombus impatiens)","black swallowtail"],native:"Eastern N. America — native to ON wetlands",notes:"The milkweed for Ontario gardens with moist or poorly-drained soil—the Don Valley, stream margins, rain gardens, and heavy clay that dries slowly. Like common milkweed it is a larval host for monarch butterflies, but unlike it, swamp milkweed does not spread aggressively by rhizome, making it a better-mannered choice for most garden situations. Great spangled fritillaries, one of Ontario's largest and most striking butterflies, are consistent nectar visitors. Tall, elegant stems with deep pink flower clusters that bloom reliably through midsummer."},
+      {id:"joe-pye",common:"Sweet Joe-Pye Weed",latin:"Eutrochium purpureum",bloom:"Aug – Sep",pollinators:["monarch (migration nectaring)","tiger swallowtail","great spangled fritillary","common eastern bumblebee (Bombus impatiens)","brown-belted bumblebee (Bombus griseocollis)"],native:"Eastern N. America — native to ON moist woodlands",notes:"A tall, imposing perennial — often reaching six feet — with domed pink-purple flower heads that are among the most heavily visited of any Ontario native in late summer. Monarchs moving south through Ontario in August and September use Joe-Pye weed as a primary fuelling stop. Tiger swallowtails, one of Ontario's most recognisable butterflies, are extraordinarily frequent visitors. Native to Ontario's moist woodland edges and stream banks; tolerates part shade better than most tall prairie perennials. Vanilla-scented flowers on dark, purple-tinged stems."},
+      {id:"solomon-seal",common:"Solomon's Seal",latin:"Polygonatum multiflorum",bloom:"May – Jun",pollinators:["ruby-throated hummingbird (nectar)","bumblebee queens (Bombus spp.)","Baltimore checkerspot (larval — related native sp.)"],native:"Europe & Asia",notes:"A non-native species widely naturalised in Ontario's woodland gardens, Solomon's seal earns its place through elegant arching stems, paired pendant white bell flowers, and deep shade tolerance where few other plants perform. The tubular flowers are visited by ruby-throated hummingbirds and bumblebee queens in early spring. While not a host plant for Ontario specialists, it fills an important structural and temporal niche — blooming in May beneath deciduous canopy when little else is flowering in shade. The native Great Solomon's Seal (Polygonatum biflorum) is ecologically preferable and worth seeking out as an alternative."},
+    ]
+  },
+  {
+    title: "Non-natives",
+    desc: "Garden plants of non-native origin that nonetheless offer pollinator value, grown here for colour, harvest, or seasonal interest.",
+    nonnative: true,
+    plants: [
+      {id:"beets",common:"Beets",latin:"Beta vulgaris",bloom:"Jun – Aug (if bolted)",pollinators:["drone flies (Eristalis tenax)","common oblique syrphid (Allograpta obliqua)","ligated furrow bee (Halictus ligatus)"],native:"Mediterranean & Asia Minor",notes:"When allowed to bolt and flower in their second year, beet plants produce dense clusters of tiny wind-pollinated flowers that nonetheless attract hoverflies and small sweat bees for whatever nectar is available. Drone flies (Eristalis tenax) — which mimic honeybees and are common across Ontario — are the most consistent visitors. Leaving a few plants to bolt creates late-season forage with minimal effort; seeds can be saved for the following year."},
+      {id:"lavender",common:"Lavender",latin:"Lavandula angustifolia",bloom:"Jun – Aug",pollinators:["common eastern bumblebee (Bombus impatiens)","brown-belted bumblebee (Bombus griseocollis)","European honeybee (Apis mellifera)","cabbage white","clouded sulphur"],native:"Mediterranean",notes:"One of the most reliably visited nectar plants in the Ontario garden. Common eastern and brown-belted bumblebees work lavender spikes intensively through July and August—a period when many native plants have finished blooming. European honeybees also forage heavily on lavender. In Ontario's climate, plant in full sun with excellent drainage; raised beds with added grit help prevent winter heave and root rot in heavier soils."},
+      {id:"poppy-mallow",common:"Purple Poppy Mallow",latin:"Callirhoe involucrata",bloom:"May – Sep",pollinators:["long-horned bees (Melissodes desponsa)","common eastern bumblebee (Bombus impatiens)","sweat bees (Lasioglossum spp.)","sulphur butterflies"],native:"Central N. America (semi-native)",notes:"While native to the central plains, this species reaches the edge of its natural range well south of Ontario—it functions here as a near-native. Melissodes long-horned bees, present in southern Ontario, are specialist pollen collectors on mallow-family plants and are the most important visitors. The vivid magenta flowers open daily over an exceptionally long season. Deep taproot makes it drought-tolerant once established; do not attempt to move it."},
+      {id:"rhubarb",common:"Rhubarb",latin:"Rheum rhabarbarum",bloom:"May – Jun (if uncut)",pollinators:["drone flies (Eristalis spp.)","sweat bees (Lasioglossum spp.)","European honeybee (Apis mellifera)"],native:"Central Asia",notes:"When allowed to send up its flowering stalk — typically removed by harvesters — rhubarb produces tall, dramatic plumes of small cream-coloured flowers that attract a steady stream of small hoverflies and sweat bees. Even without flowers the enormous leaves create cool microhabitat beneath them for ground beetles and moisture-seeking insects. A deeply frost-hardy perennial that is one of the first plants to emerge in an Ontario spring."},
+      {id:"thyme",common:"Thyme",latin:"Thymus vulgaris",bloom:"Jun – Jul",pollinators:["European honeybee (Apis mellifera)","common eastern bumblebee (Bombus impatiens)","sweat bees (Lasioglossum spp.)","cabbage white","grey hairstreak"],native:"Mediterranean",notes:"Among the most productive nectar sources per square centimetre of any garden plant. A mat of flowering thyme in June hums audibly with honeybees and small native bees working the tiny pink-purple flowers. Particularly valuable because it flowers low to the ground, accessible to small short-tongued bees that cannot reach tubular flowers. Creeping thyme varieties can replace sections of lawn with a fragrant, bee-rich, drought-tolerant groundcover that requires no mowing."},
+      {id:"chives",common:"Chives",latin:"Allium schoenoprasum",bloom:"May – Jun",pollinators:["common eastern bumblebee (Bombus impatiens)","mason bees (Osmia spp.)","European honeybee (Apis mellifera)","cabbage white"],native:"Europe, Asia & N. America (circumpolar)",notes:"One of the earliest alliums to bloom in the Ontario garden, chives bridge the gap between spring ephemerals and early summer perennials. The globe-shaped purple-pink flower heads are worked intensively by bumblebee queens still building their colonies in May and June. Mason bees, which are active only in spring, are consistent visitors. Technically circumpolar and arguably borderline-native in parts of Canada, though the culinary strains grown in gardens are of European origin. Deadhead to prevent aggressive self-seeding."},
+      {id:"lemon-grass",common:"Lemon Grass",latin:"Cymbopogon citratus",bloom:"rarely in ON climate",pollinators:["hoverflies (if flowering)","ground beetles (shelter)"],native:"South & Southeast Asia",notes:"Grown in Ontario as an annual or overwintered indoors, lemon grass rarely flowers in our climate and its pollinator value is accordingly modest. Its inclusion here is for its structural role: the dense clumping foliage creates sheltered microhabitat at ground level for beetles, spiders, and other beneficial invertebrates. The lemon-scented oils are also repellent to some garden pests. Harvest outer stems through the season; bring pots indoors before first frost or treat as an annual."},
+      {id:"basil",common:"Basil",latin:"Ocimum basilicum",bloom:"Jul – Sep (if bolted)",pollinators:["European honeybee (Apis mellifera)","common eastern bumblebee (Bombus impatiens)","sweat bees (Lasioglossum spp.)"],native:"Tropical Asia & Africa",notes:"When allowed to bolt and flower, basil becomes a surprisingly productive nectar plant — the small white or pale pink flower spikes are worked steadily by honeybees and small bumblebees through late summer. Most gardeners pinch flowers to extend leaf production, but leaving a few plants to bloom provides a useful late-season supplement to the native planting. Highly frost-sensitive; direct sow after last frost or start indoors four weeks prior."},
+      {id:"raspberry",common:"Raspberry",latin:"Rubus idaeus",bloom:"Jun – Jul",pollinators:["common eastern bumblebee (Bombus impatiens)","brown-belted bumblebee (Bombus griseocollis)","European honeybee (Apis mellifera)","mason bees (Osmia spp.)","tiger swallowtail (nectar)"],native:"Europe (wild forms also native to ON)",notes:"Raspberries occupy an interesting position — the wild red raspberry (Rubus idaeus subsp. strigosus) is genuinely native to Ontario's disturbed woodland edges and roadsides, while cultivated varieties are derived partly from European stock. Either way, the open five-petalled flowers are among the most accessible and pollen-rich of any fruiting plant, visited heavily by bumblebees and mason bees in June and early July. The fruiting canes also provide structural nesting cover for cavity-nesting bees between seasons. A genuinely dual-purpose plant."},
+    ]
+  }
+];
+
+const container = document.getElementById('plant-sections');
+let globalIdx = 0;
+
+sections.forEach(section => {
+  const group = document.createElement('div');
+  group.className = 'plant-group';
+  group.innerHTML = `
+    <div class="group-heading">
+      <h2>${section.title}</h2>
+      <span class="group-count">${section.plants.length} species</span>
+    </div>
+    <p class="group-desc">${section.desc}</p>
+    <div class="plant-list"></div>`;
+
+  const list = group.querySelector('.plant-list');
+
+  section.plants.forEach(p => {
+    const idx = globalIdx++;
+    const card = document.createElement('div');
+    card.className = 'plant-card' + (section.nonnative ? ' nonnative' : '');
+    const nativeTag = section.nonnative
+      ? `<span class="tag foreign">non-native</span>`
+      : `<span class="tag native">${p.native}</span>`;
+
+    card.innerHTML = `
+      <button class="plant-trigger" aria-expanded="false" aria-controls="body-${idx}">
+        <span class="plant-icon" aria-hidden="true">${icons[p.id] || ''}</span>
+        <span class="plant-names">
+          <span class="plant-common">${p.common}</span>
+          <span class="plant-latin">${p.latin}</span>
+        </span>
+        <span class="plant-tags" aria-hidden="true">
+          <span class="tag bloom">${p.bloom}</span>
+          ${nativeTag}
+        </span>
+        <svg class="plant-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 8 10 13 15 8"/></svg>
+      </button>
+      <div class="plant-body" id="body-${idx}" role="region">
+        <div class="plant-body-inner">
+          <div class="plant-body-content">
+            <div>
+              <p class="plant-notes">${p.notes}</p>
+            </div>
+            <div class="plant-meta">
+              <div class="meta-row"><span class="label">Bloom&nbsp;&nbsp;</span>${p.bloom}</div>
+              <div class="meta-row"><span class="label">Visitors</span>${p.pollinators.join(', ')}</div>
+              <div class="meta-row"><span class="label">Origin&nbsp;&nbsp;</span>${p.native}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    list.appendChild(card);
+    card.querySelector('.plant-trigger').addEventListener('click', () => {
+      const open = card.classList.toggle('open');
+      card.querySelector('.plant-trigger').setAttribute('aria-expanded', String(open));
+    });
+  });
+
+  container.appendChild(group);
+});
+</script>
+</body>
+</html>
