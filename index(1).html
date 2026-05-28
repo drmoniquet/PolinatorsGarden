@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pollinator Garden</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --parchment:    #f5f0e8;
+      --parchment-dk: #ede6d5;
+      --ink:          #2b2318;
+      --ink-mid:      #4a3d2e;
+      --ink-light:    #7a6a55;
+      --rust:         #8b3a1a;
+      --moss:         #4a6741;
+      --border:       rgba(43,35,24,0.18);
+      --serif:        'Playfair Display', Georgia, serif;
+      --type:         'Special Elite', 'Courier New', monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--parchment); color: var(--ink); font-family: var(--type); font-size: 16px; line-height: 1.75; min-height: 100vh; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; }
+    .page { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 0 2rem 6rem; }
+    header { padding: 4rem 0 2.5rem; border-bottom: 1.5px solid var(--border); margin-bottom: 3.5rem; }
+    .header-eyebrow { font-size: 0.78rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.75rem; }
+    header h1 { font-family: var(--serif); font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 700; line-height: 1.15; }
+    header h1 em { font-style: italic; color: var(--moss); }
+    .header-rule { width: 60px; height: 2px; background: var(--rust); margin: 1.5rem 0; }
+    .intro { margin-bottom: 4rem; }
+    .intro h2 { font-family: var(--serif); font-size: 1.35rem; font-weight: 400; font-style: italic; color: var(--ink-mid); margin-bottom: 1.25rem; }
+    .intro p { font-size: 0.96rem; color: var(--ink-mid); margin-bottom: 1rem; max-width: 68ch; }
+    .pull-quote { border-left: 3px solid var(--rust); padding: 0.6rem 0 0.6rem 1.4rem; margin: 2rem 0; font-family: var(--serif); font-style: italic; font-size: 1.05rem; color: var(--ink); line-height: 1.6; }
+    .plant-group { margin-bottom: 3.5rem; }
+    .group-heading { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.25rem; }
+    .group-heading h2 { font-family: var(--serif); font-size: 1.25rem; font-weight: 700; color: var(--ink); }
+    .group-count { font-size: 0.75rem; letter-spacing: 0.12em; color: var(--ink-light); }
+    .group-desc { font-size: 0.82rem; color: var(--ink-light); margin-bottom: 1.25rem; font-style: italic; max-width: 60ch; }
+    .plant-card { border-top: 1px solid var(--border); }
+    .plant-card:last-child { border-bottom: 1px solid var(--border); }
+    .plant-trigger { width: 100%; background: none; border: none; cursor: pointer; padding: 1.1rem 0; display: flex; align-items: center; gap: 1rem; text-align: left; color: var(--ink); font-family: var(--type); }
+    .plant-trigger:hover .plant-common { color: var(--rust); }
+    .plant-icon { flex-shrink: 0; width: 38px; height: 38px; background: var(--parchment-dk); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .plant-icon svg { width: 28px; height: 28px; }
+    .plant-names { flex: 1; }
+    .plant-common { font-family: var(--serif); font-size: 1rem; font-weight: 700; display: block; transition: color 0.2s; }
+    .plant-latin { font-family: var(--serif); font-style: italic; font-size: 0.8rem; color: var(--ink-light); }
+    .plant-tags { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-right: 0.5rem; }
+    @media (max-width: 520px) { .plant-tags { display: none; } }
+    .tag { font-size: 0.65rem; letter-spacing: 0.08em; padding: 2px 7px; border: 1px solid var(--border); border-radius: 2px; color: var(--ink-light); white-space: nowrap; }
+    .tag.bloom  { border-color: var(--rust); color: var(--rust); }
+    .tag.native { border-color: var(--moss); color: var(--moss); }
+    .tag.foreign { border-color: var(--ink-light); color: var(--ink-light); font-style: italic; }
+    .plant-chevron { flex-shrink: 0; width: 16px; height: 16px; color: var(--ink-light); transition: transform 0.3s ease; }
+    .plant-card.open .plant-chevron { transform: rotate(180deg); }
+    .plant-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.35s ease; }
+    .plant-card.open .plant-body { grid-template-rows: 1fr; }
+    .plant-body-inner { overflow: hidden; }
+    .plant-body-content { padding: 0 0 1.5rem 3.1rem; display: grid; grid-template-columns: 1fr auto; gap: 1rem 2rem; align-items: start; }
+    @media (max-width: 520px) { .plant-body-content { grid-template-columns: 1fr; padding-left: 0; } }
+    .plant-notes { font-size: 0.88rem; color: var(--ink-mid); line-height: 1.85; }
+    .plant-meta { display: flex; flex-direction: column; gap: 0.45rem; min-width: 155px; }
+    .meta-row { font-size: 0.75rem; color: var(--ink-light); display: flex; gap: 0.4rem; }
+    .meta-row .label { color: var(--ink-mid); }
+    .buy-link { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 1.1rem; font-size: 0.8rem; color: var(--rust); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+    .buy-link:hover { border-bottom-color: var(--rust); }
+    .buy-link svg { width: 11px; height: 11px; }
+    footer { margin-top: 5rem; padding-top: 2rem; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--ink-light); letter-spacing: 0.05em; }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="header-eyebrow">A garden journal</p>
+    <h1>The Pollinator<br><em>Garden</em></h1>
+    <div class="header-rule"></div>
+  </header>
+
+  <section class="intro">
+    <h2>Why native plants matter</h2>
+    <p>We are in the midst of a quiet crisis. Across North America, populations of bees, butterflies, moths, beetles, and hummingbirds—the creatures responsible for pollinating roughly one-third of everything we eat—have declined sharply over the past half-century. Habitat loss is the primary driver: as meadows give way to lawns and roadsides are mowed to the edge, the web of relationships between native plants and native pollinators frays thread by thread.</p>
+    <p>Native plants are not merely decorative. Over millions of years, they have co-evolved with local insects, developing the precise flower shapes, bloom times, nectars, and chemical signals that specialist pollinators depend on. A non-native ornamental may look similar to a human eye, but offer nothing to a native bee whose life cycle is tuned to something specific. The monarch butterfly can complete its life cycle only on milkweed. The rusty-patched bumblebee requires a succession of blooms from early spring through late autumn to sustain a colony. This specificity is not fragility—it is the architecture of an ecosystem.</p>
+    <div class="pull-quote">&ldquo;A single mature native oak supports over 500 species of caterpillars. A Bradford pear&mdash;the tree planted on millions of suburban streets&mdash;supports fewer than five.&rdquo;</div>
+    <p>A backyard planting of native perennials, shrubs, and trees is not a small gesture. Research from the Tallamy lab at the University of Delaware has shown that even modest patches of native habitat—as little as one-tenth of an acre—meaningfully support breeding bird populations when connected across a neighbourhood. The cumulative effect of many small gardens is measurable at the landscape scale.</p>
+    <p>The plants below are chosen for their ecological generosity: long bloom windows, high pollen and nectar value, larval host plant status, and resilience without irrigation or chemical inputs once established. Many were here before the houses were.</p>
+  </section>
+
+  <div id="plant-sections"></div>
+  <footer><p>Compiled from field notes &amp; seed catalogues &mdash; updated seasonally.</p></footer>
+</div>
+
+<script>
+const icons = {
+
+  "brome-sedge": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="26" x2="14" y2="4" stroke="#6b8f5e" stroke-width="1.4" stroke-linecap="round"/>
+    <line x1="14" y1="22" x2="9" y2="16" stroke="#6b8f5e" stroke-width="1.2" stroke-linecap="round"/>
+    <line x1="14" y1="18" x2="19" y2="13" stroke="#6b8f5e" stroke-width="1.2" stroke-linecap="round"/>
+    <line x1="14" y1="14" x2="9" y2="9" stroke="#6b8f5e" stroke-width="1.2" stroke-linecap="round"/>
+    <ellipse cx="9" cy="15.5" rx="2.2" ry="1" fill="#8aad7a" transform="rotate(-35 9 15.5)"/>
+    <ellipse cx="19" cy="12.5" rx="2.2" ry="1" fill="#8aad7a" transform="rotate(35 19 12.5)"/>
+    <ellipse cx="9" cy="8.5" rx="2.2" ry="1" fill="#8aad7a" transform="rotate(-35 9 8.5)"/>
+    <ellipse cx="14" cy="4.5" rx="1.5" ry="2.5" fill="#8aad7a"/>
+  </svg>`,
+
+  "big-bluestem": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="8" stroke="#8b6f3e" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="14" y1="10" x2="10" y2="5" stroke="#8b6f3e" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="14" y1="10" x2="14" y2="4" stroke="#8b6f3e" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="14" y1="10" x2="18" y2="5" stroke="#8b6f3e" stroke-width="1.3" stroke-linecap="round"/>
+    <ellipse cx="10" cy="4.5" rx="1.2" ry="2" fill="#c0834a"/>
+    <ellipse cx="14" cy="3.5" rx="1.2" ry="2" fill="#b87040"/>
+    <ellipse cx="18" cy="4.5" rx="1.2" ry="2" fill="#c0834a"/>
+    <path d="M8 18 Q5 15 6 11" stroke="#6b8f5e" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <path d="M18 20 Q22 17 21 13" stroke="#6b8f5e" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  "lupine": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="4" stroke="#5a7a42" stroke-width="1.4" stroke-linecap="round"/>
+    <ellipse cx="14" cy="5" rx="1.5" ry="2" fill="#7c5cbf"/>
+    <ellipse cx="14" cy="9" rx="1.5" ry="2" fill="#7c5cbf"/>
+    <ellipse cx="14" cy="13" rx="1.5" ry="2" fill="#8b68cc"/>
+    <ellipse cx="14" cy="17" rx="1.5" ry="2" fill="#9875d4"/>
+    <ellipse cx="11" cy="8" rx="1.2" ry="1.8" fill="#7c5cbf" transform="rotate(-15 11 8)"/>
+    <ellipse cx="17" cy="8" rx="1.2" ry="1.8" fill="#7c5cbf" transform="rotate(15 17 8)"/>
+    <ellipse cx="10" cy="13" rx="1.2" ry="1.8" fill="#8b68cc" transform="rotate(-20 10 13)"/>
+    <ellipse cx="18" cy="13" rx="1.2" ry="1.8" fill="#8b68cc" transform="rotate(20 18 13)"/>
+    <circle cx="8" cy="24" r="3.5" fill="#5a7a42" opacity="0.7"/>
+    <circle cx="14" cy="25" r="3.5" fill="#4d6e38" opacity="0.8"/>
+    <circle cx="20" cy="24" r="3.5" fill="#5a7a42" opacity="0.7"/>
+  </svg>`,
+
+  "white-goldenrod": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="12" stroke="#5a7a42" stroke-width="1.4" stroke-linecap="round"/>
+    <line x1="14" y1="14" x2="8" y2="10" stroke="#5a7a42" stroke-width="1" stroke-linecap="round"/>
+    <line x1="14" y1="13" x2="20" y2="9" stroke="#5a7a42" stroke-width="1" stroke-linecap="round"/>
+    <line x1="14" y1="12" x2="11" y2="7" stroke="#5a7a42" stroke-width="1" stroke-linecap="round"/>
+    <line x1="14" y1="12" x2="17" y2="7" stroke="#5a7a42" stroke-width="1" stroke-linecap="round"/>
+    <circle cx="8" cy="9.5" r="1.8" fill="#f0ece0" stroke="#c8bc98" stroke-width="0.5"/>
+    <circle cx="20" cy="8.5" r="1.8" fill="#f0ece0" stroke="#c8bc98" stroke-width="0.5"/>
+    <circle cx="11" cy="6.5" r="1.8" fill="#f0ece0" stroke="#c8bc98" stroke-width="0.5"/>
+    <circle cx="17" cy="6.5" r="1.8" fill="#f0ece0" stroke="#c8bc98" stroke-width="0.5"/>
+    <circle cx="14" cy="5" r="1.8" fill="#f5f0e8" stroke="#c8bc98" stroke-width="0.5"/>
+  </svg>`,
+
+  "nodding-onion": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 26 Q14 18 17 12" stroke="#5a7a42" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+    <path d="M17 12 Q20 8 18 5" stroke="#5a7a42" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <ellipse cx="18.5" cy="4.5" rx="3.5" ry="3" fill="#e8a0b8"/>
+    <ellipse cx="16.5" cy="6.5" rx="1" ry="2.5" fill="#d4789a" transform="rotate(-20 16.5 6.5)"/>
+    <ellipse cx="19" cy="5.5" rx="1" ry="2.5" fill="#d4789a" transform="rotate(10 19 5.5)"/>
+    <ellipse cx="21" cy="6" rx="1" ry="2.5" fill="#d4789a" transform="rotate(30 21 6)"/>
+    <ellipse cx="17" cy="7.5" rx="1" ry="2.5" fill="#e8a0b8" transform="rotate(-40 17 7.5)"/>
+    <path d="M10 22 Q9 18 11 16" stroke="#5a7a42" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  "coneflower": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="14" stroke="#5a7a42" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="14" cy="10" r="4" fill="#8b4a1a"/>
+    <circle cx="14" cy="10" r="2.8" fill="#7a3e14"/>
+    <ellipse cx="14" cy="5" rx="1.8" ry="3" fill="#d4789a" transform="rotate(0 14 5)"/>
+    <ellipse cx="19" cy="7" rx="1.8" ry="3" fill="#c86490" transform="rotate(60 19 7)"/>
+    <ellipse cx="21" cy="12" rx="1.8" ry="3" fill="#d4789a" transform="rotate(105 21 12)"/>
+    <ellipse cx="18" cy="17" rx="1.8" ry="3" fill="#c86490" transform="rotate(150 18 17)"/>
+    <ellipse cx="10" cy="17" rx="1.8" ry="3" fill="#d4789a" transform="rotate(-150 10 17)"/>
+    <ellipse cx="7" cy="12" rx="1.8" ry="3" fill="#c86490" transform="rotate(-105 7 12)"/>
+    <ellipse cx="9" cy="7" rx="1.8" ry="3" fill="#d4789a" transform="rotate(-60 9 7)"/>
+  </svg>`,
+
+  "columbine": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="16" stroke="#5a7a42" stroke-width="1.4" stroke-linecap="round"/>
+    <ellipse cx="14" cy="12" rx="2" ry="3.5" fill="#c0392b"/>
+    <ellipse cx="14" cy="12" rx="1.2" ry="2.5" fill="#e8c84a"/>
+    <ellipse cx="10" cy="13" rx="2" ry="3.5" fill="#c0392b" transform="rotate(-72 10 13)"/>
+    <ellipse cx="10.5" cy="13" rx="1.2" ry="2.5" fill="#e8c84a" transform="rotate(-72 10.5 13)"/>
+    <ellipse cx="11" cy="8" rx="2" ry="3.5" fill="#c0392b" transform="rotate(-144 11 8)"/>
+    <ellipse cx="11.5" cy="8.5" rx="1.2" ry="2.5" fill="#e8c84a" transform="rotate(-144 11.5 8.5)"/>
+    <ellipse cx="17" cy="8" rx="2" ry="3.5" fill="#c0392b" transform="rotate(144 17 8)"/>
+    <ellipse cx="16.5" cy="8.5" rx="1.2" ry="2.5" fill="#e8c84a" transform="rotate(144 16.5 8.5)"/>
+    <ellipse cx="18" cy="13" rx="2" ry="3.5" fill="#c0392b" transform="rotate(72 18 13)"/>
+    <ellipse cx="17.5" cy="13" rx="1.2" ry="2.5" fill="#e8c84a" transform="rotate(72 17.5 13)"/>
+  </svg>`,
+
+  "coreopsis": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="14" stroke="#5a7a42" stroke-width="1.4" stroke-linecap="round"/>
+    <circle cx="14" cy="11" r="3" fill="#c8920a"/>
+    <ellipse cx="14" cy="5.5" rx="2" ry="3" fill="#e8c030"/>
+    <ellipse cx="19.5" cy="8" rx="2" ry="3" fill="#e8c030" transform="rotate(60 19.5 8)"/>
+    <ellipse cx="20" cy="14.5" rx="2" ry="3" fill="#d4aa28" transform="rotate(120 20 14.5)"/>
+    <ellipse cx="14" cy="17.5" rx="2" ry="3" fill="#e8c030" transform="rotate(180 14 17.5)"/>
+    <ellipse cx="8" cy="14.5" rx="2" ry="3" fill="#d4aa28" transform="rotate(-120 8 14.5)"/>
+    <ellipse cx="8.5" cy="8" rx="2" ry="3" fill="#e8c030" transform="rotate(-60 8.5 8)"/>
+  </svg>`,
+
+  "blazing-star": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="4" stroke="#5a7a42" stroke-width="1.5" stroke-linecap="round"/>
+    <rect x="11.5" y="3" width="5" height="3" rx="1.5" fill="#8b4cbe"/>
+    <rect x="11.5" y="7.5" width="5" height="3" rx="1.5" fill="#9b5cce"/>
+    <rect x="11.5" y="12" width="5" height="3" rx="1.5" fill="#a868d4"/>
+    <rect x="11.5" y="16.5" width="5" height="3" rx="1.5" fill="#b878dc"/>
+    <line x1="10" y1="4.5" x2="7" y2="4.5" stroke="#8b4cbe" stroke-width="0.8"/>
+    <line x1="10" y1="9" x2="7" y2="9" stroke="#9b5cce" stroke-width="0.8"/>
+    <line x1="18" y1="4.5" x2="21" y2="4.5" stroke="#8b4cbe" stroke-width="0.8"/>
+    <line x1="18" y1="9" x2="21" y2="9" stroke="#9b5cce" stroke-width="0.8"/>
+    <line x1="10" y1="13.5" x2="7" y2="13.5" stroke="#a868d4" stroke-width="0.8"/>
+    <line x1="18" y1="13.5" x2="21" y2="13.5" stroke="#a868d4" stroke-width="0.8"/>
+  </svg>`,
+
+  "cinquefoil": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="14" stroke="#5a7a42" stroke-width="1.4" stroke-linecap="round"/>
+    <circle cx="14" cy="11" r="2" fill="#e8d090"/>
+    <ellipse cx="14" cy="6" rx="2.5" ry="2" fill="#f0e8d8"/>
+    <ellipse cx="19" cy="9.5" rx="2.5" ry="2" fill="#f0e8d8" transform="rotate(72 19 9.5)"/>
+    <ellipse cx="17" cy="15.5" rx="2.5" ry="2" fill="#f0e8d8" transform="rotate(144 17 15.5)"/>
+    <ellipse cx="11" cy="15.5" rx="2.5" ry="2" fill="#f0e8d8" transform="rotate(-144 11 15.5)"/>
+    <ellipse cx="9" cy="9.5" rx="2.5" ry="2" fill="#f0e8d8" transform="rotate(-72 9 9.5)"/>
+    <path d="M7 24 Q7 21 10 20 Q14 19 14 19" stroke="#5a7a42" stroke-width="1" fill="none"/>
+    <path d="M21 24 Q21 21 18 20 Q14 19 14 19" stroke="#5a7a42" stroke-width="1" fill="none"/>
+  </svg>`,
+
+  "turtlehead": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="8" stroke="#5a7a42" stroke-width="1.5" stroke-linecap="round"/>
+    <ellipse cx="14" cy="6" rx="4" ry="2.5" fill="#e8ede0" stroke="#b8c8a0" stroke-width="0.8"/>
+    <ellipse cx="14" cy="10" rx="3.5" ry="2.5" fill="#e8ede0" stroke="#b8c8a0" stroke-width="0.8"/>
+    <ellipse cx="14" cy="14" rx="3" ry="2.2" fill="#dde8d4" stroke="#b8c8a0" stroke-width="0.8"/>
+    <path d="M10 6 Q8 5 8 7" stroke="#b8c8a0" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+    <path d="M18 6 Q20 5 20 7" stroke="#b8c8a0" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+    <path d="M6 20 Q8 18 11 19" stroke="#5a7a42" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <path d="M22 21 Q20 18 17 19" stroke="#5a7a42" stroke-width="1" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  "iris": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="14" stroke="#5a7a42" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M14 14 Q10 10 9 6 Q11 4 14 8 Q17 4 19 6 Q18 10 14 14Z" fill="#6a78c8"/>
+    <path d="M14 14 Q10 16 7 15 Q6 12 10 11 Q12 10 14 14Z" fill="#8a8ed8" opacity="0.9"/>
+    <path d="M14 14 Q18 16 21 15 Q22 12 18 11 Q16 10 14 14Z" fill="#8a8ed8" opacity="0.9"/>
+    <path d="M14 14 Q11 18 10 22 Q13 23 14 19 Q15 23 18 22 Q17 18 14 14Z" fill="#6a78c8" opacity="0.8"/>
+    <line x1="14" y1="10" x2="14" y2="13" stroke="#f0e8c0" stroke-width="0.8" opacity="0.7"/>
+  </svg>`,
+
+  "bee-balm": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="14" stroke="#5a7a42" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="14" cy="12" r="3" fill="#d4a830"/>
+    <ellipse cx="14" cy="5.5" rx="1" ry="3" fill="#e8a820"/>
+    <ellipse cx="19.5" cy="7.5" rx="1" ry="3" fill="#e8a820" transform="rotate(60 19.5 7.5)"/>
+    <ellipse cx="20.5" cy="14" rx="1" ry="3" fill="#c89818" transform="rotate(110 20.5 14)"/>
+    <ellipse cx="7.5" cy="7.5" rx="1" ry="3" fill="#e8a820" transform="rotate(-60 7.5 7.5)"/>
+    <ellipse cx="6.5" cy="14" rx="1" ry="3" fill="#c89818" transform="rotate(-110 6.5 14)"/>
+    <ellipse cx="10" cy="18" rx="1" ry="3" fill="#e8a820" transform="rotate(-145 10 18)"/>
+    <ellipse cx="18" cy="18" rx="1" ry="3" fill="#e8a820" transform="rotate(145 18 18)"/>
+    <ellipse cx="9" cy="20" rx="2.5" ry="1.5" fill="#d48aa0" opacity="0.7"/>
+    <ellipse cx="14" cy="22" rx="2.5" ry="1.5" fill="#c8789a" opacity="0.7"/>
+    <ellipse cx="19" cy="20" rx="2.5" ry="1.5" fill="#d48aa0" opacity="0.7"/>
+  </svg>`,
+
+  "prairie-smoke": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="27" x2="14" y2="17" stroke="#5a7a42" stroke-width="1.4" stroke-linecap="round"/>
+    <line x1="14" y1="19" x2="9" y2="14" stroke="#5a7a42" stroke-width="1.1" stroke-linecap="round"/>
+    <line x1="14" y1="18" x2="14" y2="12" stroke="#5a7a42" stroke-width="1.1" stroke-linecap="round"/>
+    <line x1="14" y1="19" x2="19" y2="14" stroke="#5a7a42" stroke-width="1.1" stroke-linecap="round"/>
+    <ellipse cx="9" cy="12.5" rx="2" ry="3" fill="#b04860" transform="rotate(-10 9 12.5)"/>
+    <ellipse cx="14" cy="10.5" rx="2" ry="3" fill="#c05870"/>
+    <ellipse cx="19" cy="12.5" rx="2" ry="3" fill="#b04860" transform="rotate(10 19 12.5)"/>
+    <path d="M7 8 Q8 5 9 6" stroke="#c89898" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+    <path d="M13 6 Q14 3 14 4" stroke="#c89898" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+    <path d="M19 8 Q20 5 19 6" stroke="#c89898" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  "beets": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="14" y1="20" x2="14" y2="26" stroke="#8b3a5a" stroke-width="1.4" stroke-linecap="round"/>
+    <circle cx="14" cy="17" r="6" fill="#8b2050"/>
+    <ellipse cx="14" cy="17" rx="4" ry="6" fill="#a03060" opacity="0.5"/>
+    <path d="M10 10 Q8 5 11 4 Q13 8 14 11" stroke="#5a7a42" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <path d="M14 10 Q13 4 15 3 Q16 7 15 11" stroke="#4d6e38" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <path d="M18 10 Q20 5 17 4 Q15 8 14 11" stroke="#5a7a42" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="10" cy="6" rx="2.5" ry="1.5" fill="#6a9a50" transform="rotate(-20 10 6)"/>
+    <ellipse cx="15" cy="4.5" rx="2" ry="1.5" fill="#5a8a42"/>
+    <ellipse cx="18" cy="6" rx="2.5" ry="1.5" fill="#6a9a50" transform="rotate(20 18 6)"/>
+  </svg>`,
+
+  "lavender": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="10" y1="27" x2="10" y2="16" stroke="#8aad6a" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="14" y1="27" x2="14" y2="14" stroke="#7a9d5a" stroke-width="1.4" stroke-linecap="round"/>
+    <line x1="18" y1="27" x2="18" y2="16" stroke="#8aad6a" stroke-width="1.3" stroke-linecap="round"/>
+    <ellipse cx="10" cy="14" rx="1.8" ry="2.5" fill="#9c6fcc"/>
+    <ellipse cx="10" cy="10.5" rx="1.8" ry="2.5" fill="#a87cd8"/>
+    <ellipse cx="10" cy="7" rx="1.8" ry="2.5" fill="#b888e0"/>
+    <ellipse cx="14" cy="12" rx="1.8" ry="2.5" fill="#9c6fcc"/>
+    <ellipse cx="14" cy="8.5" rx="1.8" ry="2.5" fill="#a87cd8"/>
+    <ellipse cx="14" cy="5" rx="1.8" ry="2.5" fill="#b888e0"/>
+    <ellipse cx="18" cy="14" rx="1.8" ry="2.5" fill="#9c6fcc"/>
+    <ellipse cx="18" cy="10.5" rx="1.8" ry="2.5" fill="#a87cd8"/>
+    <ellipse cx="18" cy="7" rx="1.8" ry="2.5" fill="#b888e0"/>
+    <ellipse cx="8" cy="24" rx="3" ry="1.2" fill="#6a9a50" transform="rotate(-15 8 24)"/>
+    <ellipse cx="20" cy="24" rx="3" ry="1.2" fill="#6a9a50" transform="rotate(15 20 24)"/>
+  </svg>`,
+
+  "poppy-mallow": `<svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 27 Q12 22 10 18 Q9 14 14 14 Q19 14 18 18 Q16 22 14 27Z" stroke="#5a7a42" stroke-width="1" fill="#6a9a50" opacity="0.4"/>
+    <circle cx="14" cy="11" r="2.5" fill="#f0e060"/>
+    <ellipse cx="14" cy="5" rx="3" ry="4" fill="#b8305a"/>
+    <ellipse cx="20" cy="8.5" rx="3" ry="4" fill="#c03868" transform="rotate(72 20 8.5)"/>
+    <ellipse cx="18" cy="16" rx="3" ry="4" fill="#b8305a" transform="rotate(144 18 16)"/>
+    <ellipse cx="10" cy="16" rx="3" ry="4" fill="#c03868" transform="rotate(-144 10 16)"/>
+    <ellipse cx="8" cy="8.5" rx="3" ry="4" fill="#b8305a" transform="rotate(-72 8 8.5)"/>
+  </svg>`,
+};
+
+const sections = [
+  {
+    title: "Grasses & sedges",
+    desc: "Structural grasses that provide nesting material, overwintering habitat, and larval food sources for specialist moths and skippers.",
+    plants: [
+      {id:"brome-sedge",common:"Brome-like Sedge",latin:"Carex bromoides",bloom:"Apr – May",pollinators:["native bees","skippers"],native:"Eastern N. America",notes:"A fine-textured, shade-tolerant sedge that forms graceful clumping tufts in moist to medium soils. Its seed heads are an important early-season food source for ground-foraging birds. Unlike many grasses, sedges provide structural complexity at low heights, creating microhabitat for ground-nesting bees and beetle larvae. Excellent for woodland edges and areas beneath canopy trees where little else will grow.",buyLabel:"Prairie Moon Nursery",buyUrl:"https://www.prairiemoon.com/carex-bromoides-brome-like-sedge.html"},
+      {id:"big-bluestem",common:"Big Bluestem",latin:"Andropogon gerardii",bloom:"Aug – Oct",pollinators:["skippers","native bees","moths"],native:"Central & Eastern N. America",notes:"The signature grass of the tallgrass prairie, once stretching across millions of acres from Manitoba to Texas. Dramatic bronze-red autumn colour and distinctive three-parted seed heads give rise to its folk name, 'turkey foot.' A larval host plant for several skipper butterfly species. Deep root systems—sometimes reaching ten feet—build organic matter and stabilise soil. Provides critical winter cover for overwintering insects and ground-nesting birds.",buyLabel:"Prairie Moon Nursery",buyUrl:"https://www.prairiemoon.com/andropogon-gerardii-big-bluestem.html"},
+    ]
+  },
+  {
+    title: "Native flowers",
+    desc: "Perennials and biennials native to eastern and central North America, chosen for successive bloom and high ecological value.",
+    plants: [
+      {id:"lupine",common:"Large-leaved Lupine",latin:"Lupinus polyphyllus",bloom:"May – Jul",pollinators:["bumblebees","mason bees"],native:"Western N. America",notes:"Tall spires of violet-blue to pink flowers that are structurally adapted for bumblebees—the weight of a landing bee depresses the keel and deposits pollen precisely on the bee's underside. A larval host plant for several blue butterfly species in the family Lycaenidae. Fixes atmospheric nitrogen through root nodules, enriching soil for neighbouring plants. Prefers cool, moist conditions; naturalises readily in meadow settings.",buyLabel:"American Meadows",buyUrl:"https://www.americanmeadows.com/lupine-seeds"},
+      {id:"white-goldenrod",common:"Upland White Goldenrod",latin:"Solidago ptarmicoides",bloom:"Jul – Sep",pollinators:["bees","wasps","beetles","flies"],native:"Eastern & Central N. America",notes:"The most graceful of the goldenrods, with flat-topped clusters of small white flowers on wiry, arching stems. Unlike the showy yellow goldenrods, this species is more restrained in habit and never spreads aggressively. Attracts an extraordinary diversity of small native bees, tumbling flower beetles, and syrphid flies. Exceptionally drought-tolerant; thrives in lean, well-drained soils.",buyLabel:"Prairie Moon Nursery",buyUrl:"https://www.prairiemoon.com/solidago-ptarmicoides-upland-white-aster.html"},
+      {id:"nodding-onion",common:"Nodding Onion",latin:"Allium cernuum",bloom:"Jul – Aug",pollinators:["bumblebees","sweat bees","butterflies"],native:"N. America (widespread)",notes:"A delicate native allium whose pink-to-white flower heads nod characteristically on arching stems—the nod is thought to deter nectar theft by short-tongued insects while admitting the long-tongued bees that carry pollen most efficiently. One of the few native bulbs with significant pollinator value. Deer-resistant and drought-tolerant once established. Self-seeds to form quiet colonies over time.",buyLabel:"Prairie Moon Nursery",buyUrl:"https://www.prairiemoon.com/allium-cernuum-nodding-wild-onion.html"},
+      {id:"coneflower",common:"Purple Coneflower",latin:"Echinacea purpurea",bloom:"Jul – Sep",pollinators:["bees","butterflies"],native:"Eastern N. America",notes:"One of the workhorses of any pollinator planting. The large, slightly drooping ray florets and prominent central cone attract long-tongued bumblebees and butterflies in waves through late summer. Leave seed heads standing through winter—they are a critical food source for goldfinches and chickadees. Tolerates drought and clay once established. Divide every three to four years to keep plants vigorous.",buyLabel:"Prairie Moon Nursery",buyUrl:"https://www.prairiemoon.com/echinacea-purpurea-purple-coneflower.html"},
+      {id:"columbine",common:"Red Columbine",latin:"Aquilegia canadensis",bloom:"Apr – Jun",pollinators:["ruby-throated hummingbirds","bumblebees"],native:"Eastern N. America",notes:"An early-blooming woodland perennial whose distinctive red and yellow spurred flowers are perfectly shaped for the ruby-throated hummingbird—the first hummingbirds arrive from their wintering grounds precisely as red columbine begins to bloom. Bumblebee queens, freshly emerged from winter dormancy, are also able to access nectar by piercing the spurs. Self-seeds modestly in part-shade.",buyLabel:"Prairie Moon Nursery",buyUrl:"https://www.prairiemoon.com/aquilegia-canadensis-wild-columbine.html"},
+      {id:"coreopsis",common:"Lance-leaved Coreopsis",latin:"Coreopsis lanceolata",bloom:"May – Jul",pollinators:["bees","butterflies","beetles"],native:"Eastern & Central N. America",notes:"One of the earliest-blooming native composites, producing a long succession of bright yellow daisy-like flowers on wiry stems. Particularly valuable for specialist bees in the Coreopsis-specialist genus Calliopsis. Very drought-tolerant; thrives in poor, sandy soils. Short-lived but self-seeds prolifically. A reliable, cheerful presence at the front of borders and in meadow mixes.",buyLabel:"American Meadows",buyUrl:"https://www.americanmeadows.com/coreopsis-lanceolata-lance-leaved-coreopsis"},
+      {id:"blazing-star",common:"Cylindric Blazing Star",latin:"Liatris cylindracea",bloom:"Jul – Sep",pollinators:["monarchs","bumblebees","skippers"],native:"Central N. America",notes:"A compact, drought-adapted blazing star that blooms bottom-up on stiff, upright spikes—the reverse of most flowering plants. The cylindrical, stalkless flower heads are particularly attractive to monarchs moving through in late summer. Less aggressive than some liatris species; well-suited to rock gardens and lean, dry sites. Plants are slow to establish but exceptionally long-lived once rooted.",buyLabel:"Prairie Moon Nursery",buyUrl:"https://www.prairiemoon.com/liatris-cylindracea-cylindric-blazing-star.html"},
+      {id:"cinquefoil",common:"Tall Cinquefoil",latin:"Drymocallis arguta",bloom:"Jun – Aug",pollinators:["native bees","beetles"],native:"N. America (widespread)",notes:"An underused native perennial with small white five-petalled flowers clustered on tall, sticky-hairy stems. Related to wild strawberries and roses, the open flowers offer accessible pollen to a wide range of short-tongued bees and beetles. Tolerates dry, rocky soils and part shade. A quiet, textural presence in naturalistic plantings.",buyLabel:"Prairie Moon Nursery",buyUrl:"https://www.prairiemoon.com/drymocallis-arguta-tall-cinquefoil.html"},
+      {id:"turtlehead",common:"Turtlehead",latin:"Chelone glabra",bloom:"Aug – Sep",pollinators:["bumblebees"],native:"Eastern N. America",notes:"The white-flowered turtlehead is almost exclusively pollinated by bumblebees—the flower's hinged lip requires exactly the mass and strength of a large bumblebee to open. A larval host plant for the Baltimore checkerspot butterfly, a species of conservation concern. Requires reliably moist to wet soils; excellent for stream edges, rain gardens, and boggy spots.",buyLabel:"Prairie Moon Nursery",buyUrl:"https://www.prairiemoon.com/chelone-glabra-white-turtlehead.html"},
+      {id:"iris",common:"Arctic Iris",latin:"Iris setosa subsp. arctica",bloom:"May – Jun",pollinators:["bumblebees","mason bees"],native:"Arctic & Subarctic N. America",notes:"A compact, cold-hardy iris native to coastal Alaska, the Hudson Bay region, and high-latitude wetlands. Blue-violet flowers with intricate veining guide visiting bees to nectar with remarkable precision. Well-adapted to cold, wet, acidic soils; useful at pond edges and in northern gardens where other irises struggle. Rhizomes spread slowly to form tidy clumps.",buyLabel:"Perennial Plant Nursery",buyUrl:"https://www.bluestoneperennials.com/IRISE.html"},
+      {id:"bee-balm",common:"Spotted Bee Balm",latin:"Monarda punctata",bloom:"Jul – Sep",pollinators:["bumblebees","mason bees","wasps","butterflies"],native:"Eastern & Central N. America",notes:"Perhaps the single most ecologically valuable plant you can grow for native bees. The layered, pagoda-like whorls of small spotted flowers and showy pink-lavender bracts attract an astonishing diversity of bees, wasps, and butterflies simultaneously. A specialist host for several oil-collecting bee species. Biennial to short-lived perennial; reseeds reliably in sandy or disturbed soils.",buyLabel:"Prairie Moon Nursery",buyUrl:"https://www.prairiemoon.com/monarda-punctata-spotted-bee-balm.html"},
+      {id:"prairie-smoke",common:"Prairie Smoke",latin:"Geum triflorum",bloom:"Apr – Jun",pollinators:["bumblebees","early mason bees"],native:"Central & Eastern N. America",notes:"One of the earliest native wildflowers to bloom, a critical resource for emerging bumblebee queens in April and May. Nodding, wine-red flowers are followed by the feathery, smoke-like seed plumes that give the plant its name. Low-growing and clump-forming; excellent for the front of borders and dry, open sites. Thrives in lean, well-drained soil.",buyLabel:"Prairie Moon Nursery",buyUrl:"https://www.prairiemoon.com/geum-triflorum-prairie-smoke.html"},
+    ]
+  },
+  {
+    title: "Non-natives",
+    desc: "Garden plants of non-native origin that nonetheless offer pollinator value, grown here for colour, harvest, or seasonal interest.",
+    nonnative: true,
+    plants: [
+      {id:"beets",common:"Beets",latin:"Beta vulgaris",bloom:"Jun – Aug (if bolted)",pollinators:["hoverflies","small bees"],native:"Mediterranean & Asia Minor",notes:"When allowed to bolt and flower in their second year, beet plants produce dense clusters of tiny green flowers that are an overlooked resource for hoverflies and small sweat bees. Leaving a few plants to go to seed creates late-season forage with minimal effort. The seeds can also be saved, maintaining old cultivar lines.",buyLabel:"Baker Creek Heirloom Seeds",buyUrl:"https://www.rareseeds.com/seeds/vegetables/beets"},
+      {id:"lavender",common:"Lavender",latin:"Lavandula angustifolia",bloom:"Jun – Aug",pollinators:["honeybees","bumblebees","butterflies"],native:"Mediterranean",notes:"One of the most reliably productive nectar plants in the garden, lavender produces a long succession of fragrant flower spikes that bumblebees and honeybees work from dawn to dusk. Valuable precisely because it blooms heavily in midsummer when gaps can occur in the native plant sequence. Best in full sun and sharply drained soil; in wetter climates, raised beds with added grit prevent root rot.",buyLabel:"Richters Herbs",buyUrl:"https://www.richters.com/show.cgi?page=products/herb/L4850.html"},
+      {id:"poppy-mallow",common:"Purple Poppy Mallow",latin:"Callirhoe involucrata",bloom:"May – Sep",pollinators:["long-horned bees","bumblebees"],native:"Central N. America (semi-native)",notes:"Technically native to the central Great Plains and prairie states, purple poppy mallow occupies a borderline status—native to North America but not necessarily to every garden context. The vivid magenta cup flowers are among the longest-blooming of any perennial. An important pollen source for specialist long-horned bees. Deep taproot makes it extraordinarily drought-tolerant; do not attempt to transplant once established.",buyLabel:"Prairie Moon Nursery",buyUrl:"https://www.prairiemoon.com/callirhoe-involucrata-purple-poppy-mallow.html"},
+    ]
+  }
+];
+
+const container = document.getElementById('plant-sections');
+let globalIdx = 0;
+
+sections.forEach(section => {
+  const group = document.createElement('div');
+  group.className = 'plant-group';
+  group.innerHTML = `
+    <div class="group-heading">
+      <h2>${section.title}</h2>
+      <span class="group-count">${section.plants.length} species</span>
+    </div>
+    <p class="group-desc">${section.desc}</p>
+    <div class="plant-list"></div>`;
+
+  const list = group.querySelector('.plant-list');
+
+  section.plants.forEach(p => {
+    const idx = globalIdx++;
+    const card = document.createElement('div');
+    card.className = 'plant-card' + (section.nonnative ? ' nonnative' : '');
+    const nativeTag = section.nonnative
+      ? `<span class="tag foreign">non-native</span>`
+      : `<span class="tag native">${p.native}</span>`;
+
+    card.innerHTML = `
+      <button class="plant-trigger" aria-expanded="false" aria-controls="body-${idx}">
+        <span class="plant-icon" aria-hidden="true">${icons[p.id] || ''}</span>
+        <span class="plant-names">
+          <span class="plant-common">${p.common}</span>
+          <span class="plant-latin">${p.latin}</span>
+        </span>
+        <span class="plant-tags" aria-hidden="true">
+          <span class="tag bloom">${p.bloom}</span>
+          ${nativeTag}
+        </span>
+        <svg class="plant-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 8 10 13 15 8"/></svg>
+      </button>
+      <div class="plant-body" id="body-${idx}" role="region">
+        <div class="plant-body-inner">
+          <div class="plant-body-content">
+            <div>
+              <p class="plant-notes">${p.notes}</p>
+              <a class="buy-link" href="${p.buyUrl}" target="_blank" rel="noopener">
+                Buy from ${p.buyLabel}
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h8M7 3l3 3-3 3"/></svg>
+              </a>
+            </div>
+            <div class="plant-meta">
+              <div class="meta-row"><span class="label">Bloom&nbsp;&nbsp;</span>${p.bloom}</div>
+              <div class="meta-row"><span class="label">Visitors</span>${p.pollinators.join(', ')}</div>
+              <div class="meta-row"><span class="label">Origin&nbsp;&nbsp;</span>${p.native}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    list.appendChild(card);
+    card.querySelector('.plant-trigger').addEventListener('click', () => {
+      const open = card.classList.toggle('open');
+      card.querySelector('.plant-trigger').setAttribute('aria-expanded', String(open));
+    });
+  });
+
+  container.appendChild(group);
+});
+</script>
+</body>
+</html>
